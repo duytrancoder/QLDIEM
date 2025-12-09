@@ -103,8 +103,6 @@ typings/
 
 # Compile and build output for Java projects
 bin/
-build/
-
 # Hibernate
 hibernate.cfg.xml
 
