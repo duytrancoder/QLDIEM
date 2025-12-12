@@ -26,7 +26,6 @@ import javax.swing.table.TableModel;
 public class DiemPanel extends JPanel {
 
     private DiemModel d;
-    private JLabel lblid;
     private JLabel lblmsv;
     private JLabel lblmm;
     private JLabel lblhk;
@@ -35,8 +34,8 @@ public class DiemPanel extends JPanel {
     private JLabel lblgk;
     private JLabel lblck;
     private JLabel lbltk;
+    private JLabel lblsearch;
 
-    private JTextField tfid;
     private JTextField tfmsv;
     private JTextField tfmm;
     private JTextField tfhk;
@@ -45,12 +44,14 @@ public class DiemPanel extends JPanel {
     private JTextField tfgk;
     private JTextField tfck;
     private JTextField tftk;
+    private JTextField tfsearch;
 
     private JButton btnThem;
     private JButton btnSua;
     private JButton btnXoa;
     private JButton btnXacnhan;
     private JButton btnHuy;
+    private JButton btnSearch;
 
     private JTable tblDiem;
     private DefaultTableModel model;
@@ -58,9 +59,7 @@ public class DiemPanel extends JPanel {
     public DiemPanel() {
 
         Display();
-        DiemModel qwe = new DiemModel(1, "2", "3", 4, "5", 6, 7, 8, 9);
         ArrayList<DiemModel> ds = new ArrayList<>();
-        ds.add(qwe);
         loadtable(ds);
     }
 
@@ -68,7 +67,6 @@ public class DiemPanel extends JPanel {
 
         this.setSize(900, 750);
 
-        lblid = new JLabel("ID");
         lblmsv = new JLabel("Mã Sinh Viên");
         lblmm = new JLabel("Mã Môn Học");
         lblhk = new JLabel("Học Kỳ");
@@ -77,8 +75,7 @@ public class DiemPanel extends JPanel {
         lblgk = new JLabel("Điểm Giữa Kỳ");
         lblck = new JLabel("Điểm Cuối Kỳ");
         lbltk = new JLabel("Điểm Tổng Kết");
-
-        tfid = new JTextField(20);
+        lblsearch = new JLabel("Tìm Kiếm");
         tfmsv = new JTextField(20);
         tfmm = new JTextField(20);
         tfhk = new JTextField(20);
@@ -87,8 +84,8 @@ public class DiemPanel extends JPanel {
         tfgk = new JTextField(20);
         tfck = new JTextField(20);
         tftk = new JTextField(20);
+        tfsearch = new JTextField(20);
 
-        JPanel pnid = new JPanel(new GridLayout(1, 2, 5, 5));
         JPanel pnmsv = new JPanel(new GridLayout(1, 2, 5, 5));
         JPanel pnmm = new JPanel(new GridLayout(1, 2, 5, 5));
         JPanel pnhk = new JPanel(new GridLayout(1, 2, 5, 5));
@@ -97,9 +94,7 @@ public class DiemPanel extends JPanel {
         JPanel pngk = new JPanel(new GridLayout(1, 2, 5, 5));
         JPanel pnck = new JPanel(new GridLayout(1, 2, 5, 5));
         JPanel pntk = new JPanel(new GridLayout(1, 2, 5, 5));
-
-        pnid.add(lblid);
-        pnid.add(tfid);
+        JPanel pns = new JPanel(new GridLayout(1, 3, 5, 5));
         pnmsv.add(lblmsv);
         pnmsv.add(tfmsv);
         pnmm.add(lblmm);
@@ -116,11 +111,12 @@ public class DiemPanel extends JPanel {
         pnck.add(tfck);
         pntk.add(lbltk);
         pntk.add(tftk);
-        tfid.setEditable(false);
         tftk.setEditable(false);
-
-        JPanel pnForm = new JPanel(new GridLayout(9, 1, 5, 5));
-        pnForm.add(pnid);
+        pns.add(lblsearch);
+        pns.add(tfsearch);
+        btnSearch = new JButton("🔍");
+        pns.add(btnSearch);
+        JPanel pnForm = new JPanel(new GridLayout(10, 1, 5, 5));
         pnForm.add(pnmsv);
         pnForm.add(pnmm);
         pnForm.add(pnhk);
@@ -129,6 +125,7 @@ public class DiemPanel extends JPanel {
         pnForm.add(pngk);
         pnForm.add(pnck);
         pnForm.add(pntk);
+        pnForm.add(pns);
 
         btnThem = new JButton("Thêm");
         btnSua = new JButton("Sửa");
@@ -144,7 +141,7 @@ public class DiemPanel extends JPanel {
         pnButton.add(btnHuy);
 
         String[] tencot = {
-            "ID", "MSV", "Mã Môn", "Học Kỳ", "Năm Học",
+            "MSV", "Mã Môn", "Học Kỳ", "Năm Học",
             "CC", "GK", "CK", "Tổng Kết"
         };
         model = new DefaultTableModel(tencot, 0);
@@ -171,7 +168,8 @@ public class DiemPanel extends JPanel {
         btnXoa.addActionListener(a);
         btnXacnhan.addActionListener(a);
         btnHuy.addActionListener(a);
-
+        btnSearch.addActionListener(a);
+        
     }
 
     public void addTableMouseAction(MouseListener a) {
@@ -180,15 +178,7 @@ public class DiemPanel extends JPanel {
     }
 
     public DiemModel getformdata() {
-        int id = 0;
-        try {
-            String textId = tfid.getText().trim();
-            if (!textId.isEmpty()) {
-                id = Integer.parseInt(textId);
-            }
-        } catch (Exception e) {
-            id = 0;
-        }
+       
 
         String msv = tfmsv.getText().trim();
         String mm = tfmm.getText().trim();
@@ -234,7 +224,7 @@ public class DiemPanel extends JPanel {
 
         double tk = (cc * 10 + gk * 30 + ck * 60) / 100;
 
-        return new DiemModel(id, msv, mm, hk, nh, cc, gk, ck, tk);
+        return new DiemModel( msv, mm, hk, nh, cc, gk, ck, tk);
     }
 
     public void fillform(DiemModel d) {
@@ -242,7 +232,6 @@ public class DiemPanel extends JPanel {
             return;
         }
 
-        tfid.setText(String.valueOf(d.getId()));
         tfmsv.setText(d.getMasv());
         tfmm.setText(d.getMamon());
         tfhk.setText(String.valueOf(d.getHocky()));
@@ -254,7 +243,6 @@ public class DiemPanel extends JPanel {
     }
 
     public void clearform() {
-        tfid.setText("");
         tfmsv.setText("");
         tfmm.setText("");
         tfhk.setText("");
@@ -271,7 +259,6 @@ public class DiemPanel extends JPanel {
         for (DiemModel b : d) {
 
             Object[] dulieubang = {
-                b.getId(),
                 b.getMasv(),
                 b.getMamon(),
                 b.getHocky(),
@@ -293,4 +280,8 @@ public class DiemPanel extends JPanel {
         btnXacnhan.setVisible(b);
         btnHuy.setVisible(b);
     }
+    
+    public String getSearchKeyword() {
+    return tfsearch.getText().trim();
+}
 }

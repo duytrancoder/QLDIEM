@@ -10,6 +10,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import View.DiemPanel;
 import Model.DiemModel;
+import java.util.ArrayList;
 import javax.swing.JOptionPane;
 
 /**
@@ -26,38 +27,20 @@ public class DiemController implements MouseListener, ActionListener {
     public DiemController(DiemPanel view, DiemModel model) {
         this.view = view;
         this.model = model;
-        view.on_off(true, true);
+        view.on_off(true, false);
 
         view.addActionListerner(this);
-        view.addMouseListener(this);
+        view.addTableMouseAction(this);
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        int row = view.getTblDiem().getSelectedRow();
-        if (row < 0) {
-            return;
+       int row = view.getTblDiem().getSelectedRow();
+        if (row >=0){
+            DiemModel nv = model.getDs().get(row);
+            view.fillform(nv);
         }
-        try {
-            int id = Integer.parseInt(view.getTblDiem().getValueAt(row, 0).toString());
-
-            DiemModel selectedDiem = null;
-            for (DiemModel dm : model.getDs()) {
-                if (dm.getId() == id) {
-                    selectedDiem = dm;
-                    break;
-                }
-            }
-
-            if (selectedDiem != null) {
-                view.fillform(selectedDiem);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
     }
-
     @Override
     public void mousePressed(MouseEvent e) {
     }
@@ -166,11 +149,20 @@ public class DiemController implements MouseListener, ActionListener {
 
             check = 0;
             view.loadtable(model.getDs());
+            view.on_off(true, false);
             view.clearform();
         } else if (command.equals("Hủy")) {
             check = 0;
             view.clearform();
             view.on_off(true, false);
+        }else if (command.equals("🔍")) {
+           String keyword = view.getSearchKeyword(); 
+        if (keyword.isEmpty()) {
+            view.loadtable(model.getDs());
+        } else {
+            ArrayList<DiemModel> kq = model.search(keyword);
+            view.loadtable(kq);
+        }
         }
     }
 

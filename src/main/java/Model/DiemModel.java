@@ -14,7 +14,6 @@ import java.util.ArrayList;
 
 public class DiemModel {
 
-    private int id;
     private String masv;
     private String mamon;
     private int hocky;
@@ -27,8 +26,7 @@ public class DiemModel {
     public DiemModel() {
     }
 
-    public DiemModel(int id, String masv, String mamon, int hocky, String namhoc, double diemcc, double diemgk, double diemck, double diemtongket) {
-        this.id = id;
+    public DiemModel( String masv, String mamon, int hocky, String namhoc, double diemcc, double diemgk, double diemck, double diemtongket) {
         this.masv = masv;
         this.mamon = mamon;
         this.hocky = hocky;
@@ -39,13 +37,7 @@ public class DiemModel {
         this.diemtongket = diemtongket; // Store the DB value but getter will calculate it
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
+   
 
     public String getMasv() {
         return masv;
@@ -107,7 +99,6 @@ public class DiemModel {
         return (diemcc * 10 + diemgk * 30 + diemck * 60) / 100;
     }
 
-  
     public String validate() {
         if (masv == null || masv.trim().isEmpty()) {
             return "Mã sinh viên không được để trống!";
@@ -147,7 +138,6 @@ public class DiemModel {
 
             while (rs.next()) {
                 DiemModel d = new DiemModel(
-                        rs.getInt("id"),
                         rs.getString("masv"),
                         rs.getString("mamon"),
                         rs.getInt("hocky"),
@@ -158,6 +148,7 @@ public class DiemModel {
                         rs.getDouble("diemtongket") // Nếu DB ko lưu cột này thì bỏ qua
                 );
                 list.add(d);
+               
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -182,7 +173,7 @@ public class DiemModel {
             ps.setDouble(5, d.getDiemcc());
             ps.setDouble(6, d.getDiemgk());
             ps.setDouble(7, d.getDiemck());
-            ps.setDouble(8, d.getDiemtongket()); 
+            ps.setDouble(8, d.getDiemtongket());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -198,8 +189,9 @@ public class DiemModel {
             return false;
         }
 
-        String query = "UPDATE tbldiem SET masv=?, mamon=?, hocky=?, namhoc=?, diemcc=?, diemgk=?, diemck=?, diemtongket=? WHERE id=?";
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+        String query = "UPDATE tbldiem SET masv=?, mamon=?, hocky=?, namhoc=?, diemcc=?, diemgk=?, diemck=?, diemtongket=? WHERE masv=?";
+        try (
+                Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
 
             ps.setString(1, d.getMasv());
             ps.setString(2, d.getMamon());
@@ -209,7 +201,7 @@ public class DiemModel {
             ps.setDouble(6, d.getDiemgk());
             ps.setDouble(7, d.getDiemck());
             ps.setDouble(8, d.getDiemtongket());
-            ps.setInt(9, d.getId());
+            ps.setString(9, d.getMasv());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -228,4 +220,32 @@ public class DiemModel {
             return false;
         }
     }
+
+public ArrayList<DiemModel> search(String masvCanTim) { 
+    ArrayList<DiemModel> list = new ArrayList<>();
+    String query = "SELECT * FROM tbldiem WHERE masv LIKE ?"; 
+    try (Connection conn = DatabaseConnection.getConnection(); 
+         PreparedStatement ps = conn.prepareStatement(query)) {
+        
+        ps.setString(1, "%" + masvCanTim + "%"); 
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {                
+            DiemModel d = new DiemModel(
+                rs.getString("masv"),
+                rs.getString("mamon"),
+                rs.getInt("hocky"),
+                rs.getString("namhoc"),
+                rs.getDouble("diemcc"),
+                rs.getDouble("diemgk"),
+                rs.getDouble("diemck"),
+                rs.getDouble("diemtongket")
+            );
+            list.add(d);
+        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+    }
+    return list;
+}
+
 }
