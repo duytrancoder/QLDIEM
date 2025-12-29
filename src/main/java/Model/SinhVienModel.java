@@ -319,6 +319,89 @@ public class SinhVienModel {
         }
         return false;
     }
+    
+    /**
+     * Xóa sinh viên (cần xóa điểm trước, sau đó xóa sinh viên và user)
+     */
+    public boolean xoaSinhVien(String masv) {
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+            
+            // Lấy username trước khi xóa
+            String getUsername = "SELECT username FROM tblsinhvien WHERE masv = ?";
+            String username = null;
+            try (PreparedStatement getPs = conn.prepareStatement(getUsername)) {
+                getPs.setString(1, masv);
+                try (ResultSet rs = getPs.executeQuery()) {
+                    if (rs.next()) {
+                        username = rs.getString("username");
+                    }
+                }
+            }
+            
+            // 1. Xóa điểm của sinh viên từ tbldiem trước (vì có foreign key)
+            String deleteDiemQuery = "DELETE FROM tbldiem WHERE masv = ?";
+            try (PreparedStatement diemPs = conn.prepareStatement(deleteDiemQuery)) {
+                diemPs.setString(1, masv);
+                diemPs.executeUpdate();
+                System.out.println("Đã xóa điểm của sinh viên: " + masv);
+            }
+            
+            // 2. Xóa sinh viên từ tblsinhvien
+            String deleteSvQuery = "DELETE FROM tblsinhvien WHERE masv = ?";
+            try (PreparedStatement svPs = conn.prepareStatement(deleteSvQuery)) {
+                svPs.setString(1, masv);
+                int rowsAffected = svPs.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new SQLException("Không tìm thấy sinh viên với mã: " + masv);
+                }
+                System.out.println("Đã xóa sinh viên: " + masv);
+            }
+            
+            // 3. Xóa user account từ tbluser (nếu có)
+            if (username != null && !username.isEmpty()) {
+                String deleteUserQuery = "DELETE FROM tbluser WHERE username = ?";
+                try (PreparedStatement userPs = conn.prepareStatement(deleteUserQuery)) {
+                    userPs.setString(1, username);
+                    userPs.executeUpdate();
+                    System.out.println("Đã xóa user: " + username);
+                }
+            }
+            
+            conn.commit(); // Commit transaction
+            return true;
+            
+        } catch (SQLException e) {
+            try {
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException rollbackEx) {
+                System.err.println("Lỗi rollback: " + rollbackEx.getMessage());
+            }
+            System.err.println("Lỗi SQL khi xóa sinh viên: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            try {
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException rollbackEx) {
+                System.err.println("Lỗi rollback: " + rollbackEx.getMessage());
+            }
+            System.err.println("Lỗi không xác định khi xóa sinh viên: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto commit
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Lỗi đóng kết nối: " + e.getMessage());
+            }
+        }
+    }
 
 
 

@@ -234,25 +234,57 @@ public class QuanLyGiaoVienPanel extends JPanel {
         gv.setNgaysinh(tfNgaysinh.getText().trim());
         gv.setEmail(tfEmail.getText().trim());
         gv.setSdt(tfSdt.getText().trim());
-        gv.setMakhoa((String) cbKhoa.getSelectedItem());
-        String mon = (String) cbMonHoc.getSelectedItem();
-        if (mon != null) {
-            gv.setMamon(mon.split(" - ")[0]); // Lấy mã môn
+        
+        // Get khoa
+        String khoaSelection = (String) cbKhoa.getSelectedItem();
+        gv.setMakhoa(khoaSelection);
+        
+        // Get mon hoc - extract mã môn từ selection "MH01 - Toán"
+        String monSelection = (String) cbMonHoc.getSelectedItem();
+        if (monSelection != null && monSelection.contains(" - ")) {
+            gv.setMamon(monSelection.split(" - ")[0]); // Lấy mã môn
+        } else {
+            gv.setMamon(monSelection); // Nếu không có format thì dùng trực tiếp
         }
+        
         gv.setUsername(tfUsername.getText().trim());
         return gv;
     }
     
     public void fillForm(GiaoVienModel gv) {
-        tfMagv.setText(gv.getMagv());
-        tfHoten.setText(gv.getHoten());
-        cbGioitinh.setSelectedItem(gv.getGioitinh());
-        tfNgaysinh.setText(gv.getNgaysinh());
-        tfEmail.setText(gv.getEmail());
-        tfSdt.setText(gv.getSdt());
-        cbKhoa.setSelectedItem(gv.getMakhoa());
-        cbMonHoc.setSelectedItem(gv.getMamon());
-        tfUsername.setText(gv.getUsername());
+        tfMagv.setText(gv.getMagv() != null ? gv.getMagv() : "");
+        tfHoten.setText(gv.getHoten() != null ? gv.getHoten() : "");
+        cbGioitinh.setSelectedItem(gv.getGioitinh() != null ? gv.getGioitinh() : "Nam");
+        tfNgaysinh.setText(gv.getNgaysinh() != null ? gv.getNgaysinh() : "");
+        tfEmail.setText(gv.getEmail() != null ? gv.getEmail() : "");
+        tfSdt.setText(gv.getSdt() != null ? gv.getSdt() : "");
+        
+        // Set khoa
+        if (gv.getMakhoa() != null) {
+            cbKhoa.setSelectedItem(gv.getMakhoa());
+        } else {
+            cbKhoa.setSelectedIndex(-1);
+        }
+        
+        // Set môn học - tìm và select đúng item
+        if (gv.getMamon() != null) {
+            boolean found = false;
+            for (int i = 0; i < cbMonHoc.getItemCount(); i++) {
+                String item = cbMonHoc.getItemAt(i);
+                if (item != null && item.startsWith(gv.getMamon() + " - ")) {
+                    cbMonHoc.setSelectedIndex(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                cbMonHoc.setSelectedIndex(-1);
+            }
+        } else {
+            cbMonHoc.setSelectedIndex(-1);
+        }
+        
+        tfUsername.setText(gv.getUsername() != null ? gv.getUsername() : "");
     }
     
     public void clearForm() {

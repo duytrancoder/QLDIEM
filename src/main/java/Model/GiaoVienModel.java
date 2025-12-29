@@ -143,29 +143,78 @@ public class GiaoVienModel {
     }
     
     /**
-     * Thêm giáo viên mới
+     * Thêm giáo viên mới (bao gồm tạo user account)
      */
     public boolean themGiaoVien(GiaoVienModel gv) {
-        String query = "INSERT INTO tblgiaovien (magv, hoten, gioitinh, ngaysinh, email, sdt, makhoa, mamon, username) " +
-                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false); // Start transaction
             
-            ps.setString(1, gv.getMagv());
-            ps.setString(2, gv.getHoten());
-            ps.setString(3, gv.getGioitinh());
-            ps.setString(4, gv.getNgaysinh().isEmpty() ? null : gv.getNgaysinh());
-            ps.setString(5, gv.getEmail());
-            ps.setString(6, gv.getSdt());
-            ps.setString(7, gv.getMakhoa());
-            ps.setString(8, gv.getMamon());
-            ps.setString(9, gv.getUsername());
+            // 1. Thêm user account vào tbluser trước
+            String userQuery = "INSERT INTO tbluser (username, password, type) VALUES (?, ?, ?)";
+            try (PreparedStatement userPs = conn.prepareStatement(userQuery)) {
+                userPs.setString(1, gv.getUsername());
+                userPs.setString(2, "123456"); // Default password
+                userPs.setInt(3, 1); // Type 1 = Giáo viên
+                userPs.executeUpdate();
+            }
             
-            return ps.executeUpdate() > 0;
+            // 2. Thêm giáo viên vào tblgiaovien
+            String gvQuery = "INSERT INTO tblgiaovien (magv, hoten, gioitinh, ngaysinh, email, sdt, makhoa, mamon, username) " +
+                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement gvPs = conn.prepareStatement(gvQuery)) {
+                gvPs.setString(1, gv.getMagv());
+                gvPs.setString(2, gv.getHoten());
+                gvPs.setString(3, gv.getGioitinh());
+                
+                // Handle date
+                String ngaysinh = gv.getNgaysinh();
+                if (ngaysinh != null && !ngaysinh.trim().isEmpty()) {
+                    gvPs.setDate(4, java.sql.Date.valueOf(ngaysinh));
+                } else {
+                    gvPs.setNull(4, java.sql.Types.DATE);
+                }
+                
+                gvPs.setString(5, gv.getEmail());
+                gvPs.setString(6, gv.getSdt());
+                gvPs.setString(7, gv.getMakhoa());
+                gvPs.setString(8, gv.getMamon());
+                gvPs.setString(9, gv.getUsername());
+                
+                gvPs.executeUpdate();
+            }
+            
+            conn.commit(); // Commit transaction
+            return true;
+            
         } catch (SQLException e) {
+            try {
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException rollbackEx) {
+                System.err.println("Lỗi rollback: " + rollbackEx.getMessage());
+            }
             System.err.println("Lỗi SQL khi thêm giáo viên: " + e.getMessage());
             e.printStackTrace();
             return false;
+        } catch (Exception e) {
+            try {
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException rollbackEx) {
+                System.err.println("Lỗi rollback: " + rollbackEx.getMessage());
+            }
+            System.err.println("Lỗi không xác định khi thêm giáo viên: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto commit
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Lỗi đóng kết nối: " + e.getMessage());
+            }
         }
     }
     
@@ -197,19 +246,85 @@ public class GiaoVienModel {
     }
     
     /**
-     * Xóa giáo viên
+     * Xóa giáo viên (cần xóa phân công và user account trước)
      */
     public boolean xoaGiaoVien(String magv) {
-        String query = "DELETE FROM tblgiaovien WHERE magv=?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false); // Start transaction
             
-            ps.setString(1, magv);
-            return ps.executeUpdate() > 0;
+            // Lấy username trước khi xóa
+            String getUsername = "SELECT username FROM tblgiaovien WHERE magv = ?";
+            String username = null;
+            try (PreparedStatement getPs = conn.prepareStatement(getUsername)) {
+                getPs.setString(1, magv);
+                try (ResultSet rs = getPs.executeQuery()) {
+                    if (rs.next()) {
+                        username = rs.getString("username");
+                    }
+                }
+            }
+            
+            // 1. Xóa phân công của giáo viên trước (nếu có)
+            String deletePhancongQuery = "DELETE FROM tblphancong WHERE magv = ?";
+            try (PreparedStatement pcPs = conn.prepareStatement(deletePhancongQuery)) {
+                pcPs.setString(1, magv);
+                pcPs.executeUpdate();
+                System.out.println("Đã xóa phân công của giáo viên: " + magv);
+            }
+            
+            // 2. Xóa giáo viên từ tblgiaovien
+            String deleteGvQuery = "DELETE FROM tblgiaovien WHERE magv = ?";
+            try (PreparedStatement gvPs = conn.prepareStatement(deleteGvQuery)) {
+                gvPs.setString(1, magv);
+                int rowsAffected = gvPs.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new SQLException("Không tìm thấy giáo viên với mã: " + magv);
+                }
+                System.out.println("Đã xóa giáo viên: " + magv);
+            }
+            
+            // 3. Xóa user account từ tbluser (nếu có)
+            if (username != null && !username.isEmpty()) {
+                String deleteUserQuery = "DELETE FROM tbluser WHERE username = ?";
+                try (PreparedStatement userPs = conn.prepareStatement(deleteUserQuery)) {
+                    userPs.setString(1, username);
+                    userPs.executeUpdate();
+                    System.out.println("Đã xóa user: " + username);
+                }
+            }
+            
+            conn.commit(); // Commit transaction
+            return true;
+            
         } catch (SQLException e) {
+            try {
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException rollbackEx) {
+                System.err.println("Lỗi rollback: " + rollbackEx.getMessage());
+            }
             System.err.println("Lỗi SQL khi xóa giáo viên: " + e.getMessage());
             e.printStackTrace();
             return false;
+        } catch (Exception e) {
+            try {
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException rollbackEx) {
+                System.err.println("Lỗi rollback: " + rollbackEx.getMessage());
+            }
+            System.err.println("Lỗi không xác định khi xóa giáo viên: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto commit
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Lỗi đóng kết nối: " + e.getMessage());
+            }
         }
     }
     
@@ -242,6 +357,48 @@ public class GiaoVienModel {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    /**
+     * Kiểm tra mã giáo viên đã tồn tại chưa
+     */
+    public boolean isExistMagv(String magv) {
+        String query = "SELECT COUNT(*) FROM tblgiaovien WHERE magv = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setString(1, magv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL khi kiểm tra mã giáo viên: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    /**
+     * Kiểm tra username đã tồn tại chưa
+     */
+    public boolean isExistUsername(String username) {
+        String query = "SELECT COUNT(*) FROM tbluser WHERE username = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL khi kiểm tra username: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
     }
 }
 

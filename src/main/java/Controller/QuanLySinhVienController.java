@@ -84,23 +84,59 @@ public class QuanLySinhVienController implements ActionListener, MouseListener {
             return;
         }
         
-        String masv = view.getTable().getValueAt(row, 0).toString();
-        // TODO: Load SinhVienModel từ database
-        view.setEditingMode(true);
-        isEditing = true;
+        // Sử dụng currentSV đã được fill từ mouseClick
+        if (currentSV != null) {
+            view.setEditingMode(true);
+            isEditing = true;
+        }
     }
     
     private void handleDelete() {
         int row = view.getTable().getSelectedRow();
         if (row < 0) {
-            JOptionPane.showMessageDialog(view, "Vui lòng chọn dòng để xóa!");
+            JOptionPane.showMessageDialog(view, "Vui lòng chọn sinh viên cần xóa!", 
+                "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
-        int confirm = JOptionPane.showConfirmDialog(view, "Bạn có chắc muốn xóa sinh viên này?");
+        if (currentSV == null) {
+            // Nếu chưa click, lấy thông tin từ bảng
+            JTable table = view.getTable();
+            SinhVienModel sv = new SinhVienModel();
+            sv.setMasv(table.getValueAt(row, 0).toString());
+            sv.setHoten(table.getValueAt(row, 1).toString());
+            currentSV = sv;
+        }
+        
+        String message = String.format("Bạn có chắc muốn xóa sinh viên:\n\n" +
+            "Mã SV: %s\nHọ tên: %s\n\n" +
+            "⚠️ Lưu ý: Sẽ xóa tất cả điểm số và tài khoản của sinh viên này!", 
+            currentSV.getMasv(), currentSV.getHoten());
+            
+        int confirm = JOptionPane.showConfirmDialog(view, message, 
+            "Xác nhận xóa sinh viên", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            
         if (confirm == JOptionPane.YES_OPTION) {
-            // TODO: Xóa sinh viên
-            loadData();
+            try {
+                boolean success = model.xoaSinhVien(currentSV.getMasv());
+                if (success) {
+                    JOptionPane.showMessageDialog(view, 
+                        "Đã xóa thành công sinh viên " + currentSV.getHoten() + "!", 
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    loadData();
+                    view.clearForm();
+                    currentSV = null;
+                } else {
+                    JOptionPane.showMessageDialog(view, 
+                        "Xóa thất bại! Vui lòng kiểm tra lại.", 
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(view, 
+                    "Có lỗi xảy ra khi xóa sinh viên:\n" + ex.getMessage(), 
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         }
     }
     
@@ -131,16 +167,30 @@ public class QuanLySinhVienController implements ActionListener, MouseListener {
                 return;
             }
             
-            // Check if student ID already exists
+            // Check if student ID already exists (chỉ khi thêm mới hoặc đổi mã sinh viên)
             if (!isEditing && model.isExistMasv(sv.getMasv())) {
                 JOptionPane.showMessageDialog(view, "Mã sinh viên đã tồn tại! Vui lòng chọn mã khác.");
                 return;
             }
             
-            // Check if username already exists
+            if (isEditing && currentSV != null && !currentSV.getMasv().equals(sv.getMasv())) {
+                if (model.isExistMasv(sv.getMasv())) {
+                    JOptionPane.showMessageDialog(view, "Mã sinh viên đã tồn tại! Vui lòng chọn mã khác.");
+                    return;
+                }
+            }
+            
+            // Check if username already exists (chỉ khi thêm mới hoặc đổi username)
             if (!isEditing && model.isExistUsername(sv.getUsername())) {
                 JOptionPane.showMessageDialog(view, "Username đã tồn tại! Vui lòng chọn username khác.");
                 return;
+            }
+            
+            if (isEditing && currentSV != null && !currentSV.getUsername().equals(sv.getUsername())) {
+                if (model.isExistUsername(sv.getUsername())) {
+                    JOptionPane.showMessageDialog(view, "Username đã tồn tại! Vui lòng chọn username khác.");
+                    return;
+                }
             }
             
             boolean success;
@@ -176,8 +226,28 @@ public class QuanLySinhVienController implements ActionListener, MouseListener {
     @Override
     public void mouseClicked(MouseEvent e) {
         int row = view.getTable().getSelectedRow();
-        if (row >= 0) {
-            // TODO: Fill form với dữ liệu từ bảng
+        if (row >= 0 && !isEditing) {
+            try {
+                // Lấy dữ liệu từ bảng và fill vào form
+                JTable table = view.getTable();
+                SinhVienModel sv = new SinhVienModel();
+                
+                sv.setMasv(table.getValueAt(row, 0).toString());
+                sv.setHoten(table.getValueAt(row, 1).toString());
+                sv.setNgaysinh(table.getValueAt(row, 2).toString());
+                sv.setGioitinh(table.getValueAt(row, 3).toString());
+                sv.setDiachi(table.getValueAt(row, 4).toString());
+                sv.setMalop(table.getValueAt(row, 5).toString());
+                sv.setUsername(table.getValueAt(row, 6).toString());
+                
+                view.fillForm(sv);
+                currentSV = sv;
+                
+                System.out.println("Selected student: " + sv.getHoten() + " (" + sv.getMasv() + ")");
+            } catch (Exception ex) {
+                System.err.println("Lỗi khi fill form: " + ex.getMessage());
+                ex.printStackTrace();
+            }
         }
     }
     
