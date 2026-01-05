@@ -8,55 +8,46 @@ import java.util.ArrayList;
  * Model để quản lý lớp học
  */
 public class LopModel {
-    
+
     private String malop;
     private String tenlop;
-    private String makhoa;
+
     private String magvcn;
-    
+
     public LopModel() {
     }
-    
-    public LopModel(String malop, String tenlop, String makhoa, String magvcn) {
+
+    public LopModel(String malop, String tenlop, String magvcn) {
         this.malop = malop;
         this.tenlop = tenlop;
-        this.makhoa = makhoa;
         this.magvcn = magvcn;
     }
-    
+
     // Getters and Setters
     public String getMalop() {
         return malop;
     }
-    
+
     public void setMalop(String malop) {
         this.malop = malop;
     }
-    
+
     public String getTenlop() {
         return tenlop;
     }
-    
+
     public void setTenlop(String tenlop) {
         this.tenlop = tenlop;
     }
-    
-    public String getMakhoa() {
-        return makhoa;
-    }
-    
-    public void setMakhoa(String makhoa) {
-        this.makhoa = makhoa;
-    }
-    
+
     public String getMagvcn() {
         return magvcn;
     }
-    
+
     public void setMagvcn(String magvcn) {
         this.magvcn = magvcn;
     }
-    
+
     /**
      * Lấy danh sách tất cả lớp
      */
@@ -64,16 +55,15 @@ public class LopModel {
         ArrayList<LopModel> list = new ArrayList<>();
         String query = "SELECT * FROM tblclass ORDER BY tenlop";
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-            
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(query)) {
+
             while (rs.next()) {
                 LopModel lop = new LopModel(
-                    rs.getString("malop"),
-                    rs.getString("tenlop"),
-                    rs.getString("makhoa"),
-                    rs.getString("magvcn")
-                );
+                        rs.getString("malop"),
+                        rs.getString("tenlop"),
+                        // rs.getString("makhoa"), // Removed
+                        rs.getString("magvcn"));
                 list.add(lop);
             }
         } catch (SQLException e) {
@@ -85,27 +75,26 @@ public class LopModel {
         }
         return list;
     }
-    
+
     /**
      * Lấy danh sách lớp mà giáo viên được phân công quản lý
      */
     public ArrayList<LopModel> getLopByGiaoVien(String magv) {
         ArrayList<LopModel> list = new ArrayList<>();
         String query = "SELECT c.* FROM tblclass c " +
-                       "JOIN tblphancong pc ON c.malop = pc.malop " +
-                       "WHERE pc.magv = ? ORDER BY c.tenlop";
+                "JOIN tblphancong pc ON c.malop = pc.malop " +
+                "WHERE pc.magv = ? ORDER BY c.tenlop";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, magv);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     LopModel lop = new LopModel(
-                        rs.getString("malop"),
-                        rs.getString("tenlop"),
-                        rs.getString("makhoa"),
-                        rs.getString("magvcn")
-                    );
+                            rs.getString("malop"),
+                            rs.getString("tenlop"),
+                            // rs.getString("makhoa"),
+                            rs.getString("magvcn"));
                     list.add(lop);
                 }
             }
@@ -118,15 +107,15 @@ public class LopModel {
         }
         return list;
     }
-    
+
     /**
      * Lấy mã giáo viên từ username
      */
     public String getMagvByUsername(String username) {
         String query = "SELECT magv FROM tblgiaovien WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -142,15 +131,15 @@ public class LopModel {
         }
         return null;
     }
-    
+
     /**
      * Kiểm tra giáo viên có quyền quản lý lớp không
      */
     public boolean checkGiaoVienQuanLyLop(String magv, String malop) {
         String query = "SELECT COUNT(*) FROM tblphancong WHERE magv = ? AND malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, magv);
             ps.setString(2, malop);
             try (ResultSet rs = ps.executeQuery()) {
@@ -167,23 +156,22 @@ public class LopModel {
         }
         return false;
     }
-    
+
     /**
      * Thêm lớp mới
      */
     public boolean addLop() {
-        String query = "INSERT INTO tblclass (malop, tenlop, makhoa, magvcn) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO tblclass (malop, tenlop, magvcn) VALUES (?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, this.malop);
             ps.setString(2, this.tenlop);
-            ps.setString(3, this.makhoa);
-            ps.setString(4, this.magvcn);
-            
+            ps.setString(3, this.magvcn);
+
             int result = ps.executeUpdate();
             return result > 0;
-            
+
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi thêm lớp: " + e.getMessage());
             e.printStackTrace();
@@ -194,23 +182,22 @@ public class LopModel {
             return false;
         }
     }
-    
+
     /**
      * Cập nhật thông tin lớp
      */
     public boolean updateLop() {
-        String query = "UPDATE tblclass SET tenlop = ?, makhoa = ?, magvcn = ? WHERE malop = ?";
+        String query = "UPDATE tblclass SET tenlop = ?, magvcn = ? WHERE malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, this.tenlop);
-            ps.setString(2, this.makhoa);
-            ps.setString(3, this.magvcn);
-            ps.setString(4, this.malop);
-            
+            ps.setString(2, this.magvcn);
+            ps.setString(3, this.malop);
+
             int result = ps.executeUpdate();
             return result > 0;
-            
+
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi cập nhật lớp: " + e.getMessage());
             e.printStackTrace();
@@ -221,7 +208,7 @@ public class LopModel {
             return false;
         }
     }
-    
+
     /**
      * Xóa lớp (cải tiến)
      */
@@ -231,15 +218,15 @@ public class LopModel {
             // Có sinh viên thì không cho xóa
             return false;
         }
-        
+
         String query = "DELETE FROM tblclass WHERE malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, malop);
             int result = ps.executeUpdate();
             return result > 0;
-            
+
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi xóa lớp: " + e.getMessage());
             e.printStackTrace();
@@ -250,15 +237,15 @@ public class LopModel {
             return false;
         }
     }
-    
+
     /**
      * Kiểm tra lớp có sinh viên hay không
      */
     public boolean hasStudents(String malop) {
         String query = "SELECT COUNT(*) FROM tblsinhvien WHERE malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, malop);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -274,24 +261,23 @@ public class LopModel {
         }
         return true; // Mặc định là có sinh viên để tránh xóa nhầm
     }
-    
+
     /**
      * Lấy thông tin lớp theo mã lớp
      */
     public LopModel getLopByMalop(String malop) {
         String query = "SELECT * FROM tblclass WHERE malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, malop);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new LopModel(
-                        rs.getString("malop"),
-                        rs.getString("tenlop"),
-                        rs.getString("makhoa"),
-                        rs.getString("magvcn")
-                    );
+                            rs.getString("malop"),
+                            rs.getString("tenlop"),
+                            // rs.getString("makhoa"),
+                            rs.getString("magvcn"));
                 }
             }
         } catch (SQLException e) {
@@ -303,15 +289,15 @@ public class LopModel {
         }
         return null;
     }
-    
+
     /**
      * Kiểm tra mã lớp đã tồn tại chưa
      */
     public boolean isExistMalop(String malop) {
         String query = "SELECT COUNT(*) FROM tblclass WHERE malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, malop);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -327,15 +313,15 @@ public class LopModel {
         }
         return false;
     }
-    
+
     /**
      * Thêm phân công giáo viên quản lý lớp
      */
     public boolean themPhanCong(String magv, String malop) {
         String query = "INSERT INTO tblphancong (magv, malop) VALUES (?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, magv);
             ps.setString(2, malop);
             return ps.executeUpdate() > 0;
@@ -353,15 +339,15 @@ public class LopModel {
             return false;
         }
     }
-    
+
     /**
      * Xóa phân công giáo viên quản lý lớp
      */
     public boolean xoaPhanCong(String magv, String malop) {
         String query = "DELETE FROM tblphancong WHERE magv = ? AND malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, magv);
             ps.setString(2, malop);
             return ps.executeUpdate() > 0;
@@ -375,5 +361,73 @@ public class LopModel {
             return false;
         }
     }
-}
 
+    /**
+     * Cập nhật phân công giáo viên quản lý lớp
+     */
+    public boolean updatePhanCong(String oldMagv, String oldMalop, String newMagv, String newMalop) {
+        String query = "UPDATE tblphancong SET magv = ?, malop = ? WHERE magv = ? AND malop = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, newMagv);
+            ps.setString(2, newMalop);
+            ps.setString(3, oldMagv);
+            ps.setString(4, oldMalop);
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) {
+                System.err.println("Phân công mới bị trùng lặp!");
+            } else {
+                System.err.println("Lỗi SQL khi cập nhật phân công: " + e.getMessage());
+                e.printStackTrace();
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Lỗi không xác định khi cập nhật phân công: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Lấy tổng số lớp (cho Dashboard)
+     */
+    public int getClassCount() {
+        String query = "SELECT COUNT(*) FROM tblclass";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(query);
+                ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL khi đếm lớp: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Lấy số lượng lớp giáo viên được phân công
+     */
+    public int getClassCountByTeacher(String magv) {
+        String query = "SELECT COUNT(*) FROM tblphancong WHERE magv = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, magv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL khi đếm lớp của giáo viên: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+}

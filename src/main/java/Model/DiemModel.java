@@ -569,4 +569,130 @@ public class DiemModel {
         return false;
     }
 
+    // --- Thống kê cho Dashboard ---
+    
+    public int getDiemRecordCount() {
+        String query = "SELECT COUNT(*) FROM tbldiem";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    public int getSubjectCount() {
+        String query = "SELECT COUNT(*) FROM tblmonhoc";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    public double getSystemAverageScore() {
+        String query = "SELECT AVG(diemtongket) FROM tbldiem";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return Math.round(rs.getDouble(1) * 100.0) / 100.0;
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0.0;
+    }
+
+    // Cho Sinh viên
+    public int getStudentSubjectCount(String masv) {
+        String query = "SELECT COUNT(DISTINCT mamon) FROM tbldiem WHERE masv = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, masv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    public double getStudentAverageScore(String masv) {
+        String query = "SELECT AVG(diemtongket) FROM tbldiem WHERE masv = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, masv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Math.round(rs.getDouble(1) * 100.0) / 100.0;
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0.0;
+    }
+
+    public int getPassedCount(String masv) {
+        String query = "SELECT COUNT(*) FROM tbldiem WHERE masv = ? AND diemtongket >= 4.0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, masv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    public int getImprovementCount(String masv) {
+        String query = "SELECT COUNT(*) FROM tbldiem WHERE masv = ? AND diemtongket < 4.0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, masv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+    
+    // Cho Giáo viên
+    public int getGradedCountByTeacher(String magv) {
+        // Đếm số lượng điểm thuộc môn của giáo viên dạy, trong các lớp giáo viên quản lý (ước lượng)
+        // Hoặc đơn giản là đếm tất cả điểm của môn mà giáo viên này phụ trách
+        String query = "SELECT COUNT(d.masv) FROM tbldiem d " +
+                       "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
+                       "WHERE gv.magv = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, magv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    public double getAverageScoreByTeacher(String magv) {
+        String query = "SELECT AVG(d.diemtongket) FROM tbldiem d " +
+                       "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
+                       "WHERE gv.magv = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, magv);
+            try (ResultSet rs = ps.executeQuery()) {
+                 if (rs.next()) return Math.round(rs.getDouble(1) * 100.0) / 100.0;
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0.0;
+    }
+    
+     public int getGioiCountByTeacher(String magv) {
+        String query = "SELECT COUNT(d.masv) FROM tbldiem d " +
+                       "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
+                       "WHERE gv.magv = ? AND d.diemtongket >= 8.0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, magv);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
 }
