@@ -23,6 +23,7 @@ public class PhanCongGiaoVienPanel extends JPanel {
     private DefaultTableModel tableModel;
 
     private JComboBox<String> cbGiaoVien;
+    private JComboBox<String> cbMonHoc; // New
     private JComboBox<String> cbLop;
 
     private JButton btnThem;
@@ -41,6 +42,8 @@ public class PhanCongGiaoVienPanel extends JPanel {
 
         cbGiaoVien = new JComboBox<>();
         cbGiaoVien.addItem("-- Chọn giáo viên --");
+        cbMonHoc = new JComboBox<>();
+        cbMonHoc.addItem("-- Chọn môn học --");
         cbLop = new JComboBox<>();
         cbLop.addItem("-- Chọn lớp --");
 
@@ -108,6 +111,7 @@ public class PhanCongGiaoVienPanel extends JPanel {
         formPanel.add(Box.createVerticalStrut(20));
 
         formPanel.add(createFormField("Giáo viên:", cbGiaoVien));
+        formPanel.add(createFormField("Môn học:", cbMonHoc)); // Add to layout
         formPanel.add(createFormField("Lớp:", cbLop));
 
         formPanel.add(Box.createVerticalStrut(20));
@@ -171,12 +175,28 @@ public class PhanCongGiaoVienPanel extends JPanel {
         }
     }
 
+    public void loadMonHoc(ArrayList<String> listMH) {
+        cbMonHoc.removeAllItems();
+        cbMonHoc.addItem("-- Chọn môn học --");
+        for (String mh : listMH) {
+            cbMonHoc.addItem(mh);
+        }
+    }
+
     public String getSelectedGiaoVien() {
         String selected = (String) cbGiaoVien.getSelectedItem();
         if (selected == null || selected.equals("-- Chọn giáo viên --")) {
             return null;
         }
         return selected.split(" - ")[0]; // Lấy mã GV
+    }
+
+    public String getSelectedMonHoc() {
+        String selected = (String) cbMonHoc.getSelectedItem();
+        if (selected == null || selected.equals("-- Chọn môn học --")) {
+            return null;
+        }
+        return selected.split(" - ")[0]; // Lấy mã MH
     }
 
     public String getSelectedLop() {
@@ -201,7 +221,7 @@ public class PhanCongGiaoVienPanel extends JPanel {
         btnLamMoi.addActionListener(listener);
     }
 
-    public void fillForm(String magv, String malop) {
+    public void fillForm(String magv, String malop, String mamon) {
         if (magv != null && !magv.isEmpty()) {
             for (int i = 0; i < cbGiaoVien.getItemCount(); i++) {
                 String item = cbGiaoVien.getItemAt(i);
@@ -213,6 +233,10 @@ public class PhanCongGiaoVienPanel extends JPanel {
         } else {
             cbGiaoVien.setSelectedIndex(0);
         }
+
+        // Logic to match mamon will happen in controller after loading subjects,
+        // effectively handled by calling setSelectedIndex if controller matches items.
+        // We will overload or just assume controller manages the redraw of monhoc list.
 
         if (malop != null && !malop.isEmpty()) {
             for (int i = 0; i < cbLop.getItemCount(); i++) {
@@ -229,6 +253,8 @@ public class PhanCongGiaoVienPanel extends JPanel {
 
     public void clearForm() {
         cbGiaoVien.setSelectedIndex(0);
+        cbMonHoc.removeAllItems();
+        cbMonHoc.addItem("-- Chọn môn học --");
         cbLop.setSelectedIndex(0);
         tblPhanCong.clearSelection();
     }
@@ -239,5 +265,13 @@ public class PhanCongGiaoVienPanel extends JPanel {
 
     public JTable getTable() {
         return tblPhanCong;
+    }
+
+    public JComboBox<String> getCbGiaoVien() {
+        return cbGiaoVien;
+    }
+
+    public JComboBox<String> getCbMonHoc() {
+        return cbMonHoc;
     }
 }

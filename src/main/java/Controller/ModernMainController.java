@@ -7,11 +7,16 @@ import View.QuanLyLopPanel;
 import View.PhanCongGiaoVienPanel;
 import View.QuanLySinhVienPanel;
 import View.QuanLyGiaoVienPanel;
-import View.KhoaSoNienKhoaPanel; // Import new panel
+import View.KhoaSoNienKhoaPanel;
+import View.QuanLyBoMonPanel;
+import View.QuanLyMonHocPanel; // New
 import Controller.QuanLyLopController;
 import Controller.PhanCongGiaoVienController;
 import Controller.QuanLySinhVienController;
 import Controller.QuanLyGiaoVienController;
+import Controller.QuanLyBoMonController;
+import Controller.QuanLyMonHocController;
+import Controller.HomeroomClassController;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -31,6 +36,8 @@ public class ModernMainController {
     private PhanCongGiaoVienController phanCongController;
     private QuanLySinhVienController svController;
     private QuanLyGiaoVienController gvController;
+    private QuanLyBoMonController boMonController;
+    private QuanLyMonHocController monHocController; // New
 
     public ModernMainController(ModernMainLayout view, String username, int userType) {
         this.view = view;
@@ -76,11 +83,20 @@ public class ModernMainController {
             view.getMainContentPanel().add(gvPanel, "GIAOVIEN");
             gvController = new QuanLyGiaoVienController(gvPanel);
 
+            // Quan Ly Bo Mon
+            QuanLyBoMonPanel bmPanel = new QuanLyBoMonPanel();
+            view.getMainContentPanel().add(bmPanel, "BOMON");
+            boMonController = new QuanLyBoMonController(bmPanel);
+
+            // Quan Ly Mon Hoc (New)
+            QuanLyMonHocPanel mhPanel = new QuanLyMonHocPanel();
+            view.getMainContentPanel().add(mhPanel, "MONHOC");
+            monHocController = new QuanLyMonHocController(mhPanel);
+
             // Thông báo (Admin)
             View.QuanLyThongBaoPanel tbPanel = new View.QuanLyThongBaoPanel(0); // 0=Admin
             view.getMainContentPanel().add(tbPanel, "THONGBAO");
-            // Assuming "Admin" is the real name, or fetch it. For now detailed name
-            // fetching is complex, use username.
+
             new Controller.QuanLyThongBaoController(tbPanel, username, 0, "Admin");
 
             // Khóa sổ & Niên khóa
@@ -98,6 +114,11 @@ public class ModernMainController {
 
             // Controller manages both
             new Controller.QuanLyThongBaoController(wrapper, username, 1, realName);
+
+            // Homeroom panel for teachers
+            View.HomeroomClassPanel homeroomPanel = new View.HomeroomClassPanel(username);
+            view.getMainContentPanel().add(homeroomPanel, "HOMEROOM");
+            new Controller.HomeroomClassController(homeroomPanel, username);
 
         } else if (userType == 2) { // Student
             String studentClass = fetchStudentClass(username);
@@ -120,9 +141,12 @@ public class ModernMainController {
             view.onGiaoVienClick(e -> view.showPanel("GIAOVIEN")); // Quản lý giáo viên
             view.onLopClick(e -> view.showPanel("PHANCONG")); // Phân lớp
             view.onQuanLyLopClick(e -> view.showPanel("LOP")); // Quản lý lớp
+            view.onQuanLyBoMonClick(e -> view.showPanel("BOMON")); // Quản lý bộ môn
+            view.onMonHocClick(e -> view.showPanel("MONHOC")); // Quản lý môn học (New)
             view.onKhoaSoClick(e -> view.showPanel("KHOASO")); // Khóa sổ
             view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
         } else if (userType == 1) { // Teacher
+            view.onHomeroomClick(e -> view.showPanel("HOMEROOM"));
             view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
         } else if (userType == 2) { // Student
             view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
@@ -190,10 +214,7 @@ public class ModernMainController {
      */
     public void refreshAllData() {
         if (userType == 0) { // Admin only
-            // Refresh class data first
             refreshClassData();
-
-            // Refresh student data (in case student-class relationship changed)
             if (svController != null) {
                 svController.refreshAllData();
             }
@@ -206,7 +227,6 @@ public class ModernMainController {
      */
     public void updateDashboardStats() {
         try {
-            // Models
             Model.SinhVienModel svModel = new Model.SinhVienModel();
             Model.GiaoVienModel gvModel = new Model.GiaoVienModel();
             Model.LopModel lopModel = new Model.LopModel();
@@ -216,15 +236,9 @@ public class ModernMainController {
                 view.updateStat("SV", String.valueOf(svModel.getStudentCount()));
                 view.updateStat("GV", String.valueOf(gvModel.getTeacherCount()));
                 view.updateStat("Lớp", String.valueOf(lopModel.getClassCount()));
-                // view.updateStat("Điểm", String.valueOf(diemModel.getDiemRecordCount())); //
-                // Removed
                 view.updateStat("Môn", String.valueOf(diemModel.getSubjectCount()));
-                // view.updateStat("TB", String.valueOf(diemModel.getSystemAverageScore())); //
-                // Removed
             } else if (userType == 1) { // Giáo viên
-
                 String magv = null;
-                // Quick hack to get magv
                 try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
                         java.sql.PreparedStatement ps = conn
                                 .prepareStatement("SELECT magv FROM tblgiaovien WHERE username = ?")) {
@@ -234,22 +248,13 @@ public class ModernMainController {
                             magv = rs.getString(1);
                     }
                 }
-
                 if (magv != null) {
-                    // Get actual student count using the new method
                     int studentCount = svModel.getStudentCountByTeacher(magv);
                     view.updateStat("SV", String.valueOf(studentCount));
-
-                    // Use the methods we added to DiemModel, passing magv
                     view.updateStat("Điểm", String.valueOf(diemModel.getGradedCountByTeacher(magv)));
-                    // view.updateStat("TB",
-                    // String.valueOf(diemModel.getAverageScoreByTeacher(magv))); // Removed
                     view.updateStat("Lớp", String.valueOf(lopModel.getClassCountByTeacher(magv)));
-                    view.updateStat("Môn", "1"); // Generally 1
-                    // view.updateStat("DiemGioi",
-                    // String.valueOf(diemModel.getGioiCountByTeacher(magv))); // Removed
+                    view.updateStat("Môn", "1");
                 }
-
             } else if (userType == 2) { // Sinh viên
                 String masv = diemModel.getMasvByUsername(username);
                 if (masv != null) {
@@ -257,9 +262,8 @@ public class ModernMainController {
                     view.updateStat("TB", String.valueOf(diemModel.getStudentAverageScore(masv)));
                     view.updateStat("HT", String.valueOf(diemModel.getPassedCount(masv)));
                     view.updateStat("CB", String.valueOf(diemModel.getImprovementCount(masv)));
-                    view.updateStat("XH", "..."); // Unimplemented
-                    view.updateStat("TinChi", String.valueOf(diemModel.getPassedCount(masv) * 3)); // Assume 3 credits
-                                                                                                   // per subject
+                    view.updateStat("XH", "...");
+                    view.updateStat("TinChi", String.valueOf(diemModel.getPassedCount(masv) * 3));
                 }
             }
         } catch (Exception e) {
@@ -277,21 +281,12 @@ public class ModernMainController {
 
         if (option == JOptionPane.YES_OPTION) {
             view.dispose();
-
-            // Return to login screen
             SwingUtilities.invokeLater(() -> {
                 try {
-                    // Create login model
                     Model.LoginModel loginModel = new Model.LoginModel();
-
-                    // Create and show login view
                     View.ModernLoginView loginView = new View.ModernLoginView();
-
-                    // Create login controller
                     Controller.ModernLoginController loginController = new Controller.ModernLoginController(loginView,
                             loginModel);
-
-                    // Show the login window
                     loginView.setVisible(true);
                 } catch (Exception ex) {
                     ex.printStackTrace();

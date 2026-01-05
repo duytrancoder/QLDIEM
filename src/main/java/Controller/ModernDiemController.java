@@ -30,7 +30,8 @@ public class ModernDiemController implements ActionListener, MouseListener {
     private boolean isEditing = false;
     private DiemModel currentDiem = null;
     private String selectedLop = null; // Lớp đang được chọn (cho giáo viên)
-    private String teacherSubject = null; // Môn học của giáo viên
+    private String selectedSubject = null; // Môn học được chọn (cho giáo viên)
+    private String magv = null; // Mã giáo viên
     private String globalNamHoc = "";
     private int globalHocKy = 1;
 
@@ -59,33 +60,69 @@ public class ModernDiemController implements ActionListener, MouseListener {
 
     private void setupTeacherSubjectAndClass() {
         if (userType == 1) { // Giáo viên
-            // Lấy môn học của giáo viên
-            Model.GiaoVienModel gvModel = new Model.GiaoVienModel();
-            teacherSubject = gvModel.getMonHocByUsername(username);
+            // Username chính là mã giáo viên (magv)
+            magv = username;
+            System.out.println("DEBUG: Teacher username/magv=" + magv);
 
-            if (teacherSubject != null) {
-                // Hiển thị tên môn học trên UI
-                String tenMon = gvModel.getTenMonByMamon(teacherSubject);
-                view.setTeacherSubject(teacherSubject, tenMon);
+            if (magv != null) {
+                // Check if teacher is homeroom for a class
+                String homeroomClass = lopModel.getHomeroomClassByTeacher(magv);
+                boolean isHomeroom = (homeroomClass != null && !homeroomClass.isEmpty());
 
-                // Load danh sách lớp giáo viên quản lý
-                String magv = lopModel.getMagvByUsername(username);
-                if (magv != null) {
-                    ArrayList<LopModel> listLop = lopModel.getLopByGiaoVien(magv);
-                    view.loadLop(listLop);
-
-                    // Thêm listener cho dropdown lớp
-                    view.setLopChangeListener(e -> {
-                        selectedLop = view.getSelectedLop();
-                        loadDiemForTeacher();
-                    });
-
-                    // Khóa trường môn học cho giáo viên
-                    view.lockSubjectField(teacherSubject, tenMon);
+                ArrayList<LopModel> listLop = lopModel.getLopByGiaoVien(magv);
+                System.out.println("DEBUG: Found " + listLop.size() + " classes for teacher " + magv);
+                if (isHomeroom) {
+                    System.out.println("DEBUG: Teacher is homeroom for class " + homeroomClass);
                 }
+
+                view.loadLop(listLop);
+                view.setLopVisible(true);
+                view.setMonHocVisible(true); // Show subject dropdown
+
+                // If homeroom, auto-select homeroom class
+                if (isHomeroom) {
+                    selectedLop = homeroomClass;
+                    view.selectLopByCode(homeroomClass); // Select in dropdown
+                    // Load ALL subjects for homeroom class
+                    ArrayList<String> allSubjects = lopModel.getAllSubjectsForClass(homeroomClass);
+                    view.loadMonHoc(allSubjects);
+                    System.out.println("DEBUG: Loaded " + allSubjects.size() + " subjects for homeroom class");
+                }
+
+                // Listener cho dropdown lớp → load môn học
+                view.setLopChangeListener(e -> {
+                    selectedLop = view.getSelectedLop();
+                    if (selectedLop != null && !selectedLop.isEmpty()) {
+                        // If this is homeroom class, load ALL subjects, otherwise teacher's subjects
+                        ArrayList<String> subjects;
+                        if (isHomeroom && selectedLop.equals(homeroomClass)) {
+                            subjects = lopModel.getAllSubjectsForClass(selectedLop);
+                            System.out.println("DEBUG: Loaded ALL " + subjects.size() + " subjects for homeroom class");
+                        } else {
+                            subjects = lopModel.getMonHocByGiaoVienAndLop(magv, selectedLop);
+                            System.out.println(
+                                    "DEBUG: Loaded " + subjects.size() + " teacher subjects for class " + selectedLop);
+                        }
+                        view.loadMonHoc(subjects);
+                        // Clear table until subject is selected
+                        view.loadTableData(new ArrayList<>());
+                    } else {
+                        view.loadMonHoc(new ArrayList<>());
+                        view.loadTableData(new ArrayList<>());
+                    }
+                });
+
+                // Listener cho dropdown môn học → load điểm
+                view.addMonHocChangeListener(e -> {
+                    selectedSubject = view.getSelectedMonHoc();
+                    if (selectedSubject != null && selectedLop != null) {
+                        loadDiemForTeacher();
+                    }
+                });
             } else {
-                // Giáo viên chưa được phân môn
-                view.showMessage("Giáo viên chưa được phân công môn học. Vui lòng liên hệ Admin.");
+                System.err.println("ERROR: Username is null or empty");
+                view.setLopVisible(false);
+                view.setMonHocVisible(false);
             }
         }
     }
@@ -105,14 +142,9 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 data = model.getDiemByUsername(username);
                 view.loadTableData(data);
                 showStatusMessage("Đã tải " + data.size() + " bản ghi điểm", MessageType.SUCCESS);
-            } else if (userType == 1) { // Giáo viên - load điểm môn của mình
-                if (teacherSubject != null) {
-                    loadDiemForTeacher();
-                    showStatusMessage("Đã tải điểm môn " + teacherSubject, MessageType.SUCCESS);
-                } else {
-                    view.loadTableData(new ArrayList<>());
-                    showStatusMessage("Giáo viên chưa được phân công môn học", MessageType.WARNING);
-                }
+            } else if (userType == 1) { // Giáo viên - đợi chọn lớp và môn
+                view.loadTableData(new ArrayList<>());
+                showStatusMessage("Vui lòng chọn lớp và môn học để xem điểm", MessageType.INFO);
             } else { // Admin
                 data = model.getAllDiem();
                 view.loadTableData(data);
@@ -126,48 +158,44 @@ public class ModernDiemController implements ActionListener, MouseListener {
     }
 
     private void loadDiemForTeacher() {
-        if (teacherSubject == null)
+        if (selectedSubject == null || selectedLop == null)
             return;
 
         ArrayList<DiemModel> list = new ArrayList<>();
-        if (selectedLop != null && !selectedLop.isEmpty()) {
-            // 1. Get all students
-            SinhVienModel svModel = new SinhVienModel();
-            ArrayList<SinhVienModel> students = svModel.getSinhVienByLop(selectedLop);
+        // 1. Get all students
+        SinhVienModel svModel = new SinhVienModel();
+        ArrayList<SinhVienModel> students = svModel.getSinhVienByLop(selectedLop);
 
-            // 2. Get existing grades
-            ArrayList<DiemModel> existingGrades = model.getDiemByLopAndMon(selectedLop, teacherSubject);
+        // 2. Get existing grades
+        ArrayList<DiemModel> existingGrades = model.getDiemByLopAndMon(selectedLop, selectedSubject);
 
-            // Map for quick lookup
-            Map<String, List<DiemModel>> gradeMap = new HashMap<>();
-            for (DiemModel d : existingGrades) {
-                gradeMap.computeIfAbsent(d.getMasv(), k -> new ArrayList<>()).add(d);
-            }
-
-            // 3. Merge
-            for (SinhVienModel sv : students) {
-                if (gradeMap.containsKey(sv.getMasv())) {
-                    list.addAll(gradeMap.get(sv.getMasv()));
-                } else {
-                    // Placeholder
-                    DiemModel d = new DiemModel();
-                    d.setMasv(sv.getMasv());
-                    d.setMamon(teacherSubject);
-                    // Use Global Settings
-                    d.setHocky(globalHocKy);
-                    d.setNamhoc(globalNamHoc);
-
-                    d.setDiemcc(0.0);
-                    d.setDiemgk(0.0);
-                    d.setDiemck(0.0);
-                    d.setDiemtongket(0.0);
-                    list.add(d);
-                }
-            }
-        } else {
-            // If no class selected, keep existing behavior
-            list = model.getDiemByMon(teacherSubject);
+        // Map for quick lookup
+        Map<String, List<DiemModel>> gradeMap = new HashMap<>();
+        for (DiemModel d : existingGrades) {
+            gradeMap.computeIfAbsent(d.getMasv(), k -> new ArrayList<>()).add(d);
         }
+
+        // 3. Merge
+        for (SinhVienModel sv : students) {
+            if (gradeMap.containsKey(sv.getMasv())) {
+                list.addAll(gradeMap.get(sv.getMasv()));
+            } else {
+                // Placeholder
+                DiemModel d = new DiemModel();
+                d.setMasv(sv.getMasv());
+                d.setMamon(selectedSubject);
+                // Use Global Settings
+                d.setHocky(globalHocKy);
+                d.setNamhoc(globalNamHoc);
+
+                d.setDiemcc(0.0);
+                d.setDiemgk(0.0);
+                d.setDiemck(0.0);
+                d.setDiemtongket(0.0);
+                list.add(d);
+            }
+        }
+
         view.loadTableData(list);
     }
 
@@ -243,7 +271,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
         // Pre-fill some fields for teacher
         if (userType == 1) {
             // Điền sẵn môn học của giáo viên
-            view.getSubjectField().setText(teacherSubject);
+            view.getSubjectField().setText(selectedSubject != null ? selectedSubject : "");
 
             // Điền sẵn năm học hiện tại
             java.util.Calendar cal = java.util.Calendar.getInstance();
@@ -275,7 +303,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
         }
 
         // Kiểm tra quyền môn học cho giáo viên
-        if (userType == 1 && teacherSubject == null) {
+        if (userType == 1 && selectedSubject == null) {
             showStatusMessage("Giáo viên chưa được phân công môn học", MessageType.WARNING);
             return;
         }
@@ -299,7 +327,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 diem.setDiemck(getSafeDouble(table, selectedRow, 4));
                 diem.setDiemtongket(getSafeDouble(table, selectedRow, 5));
 
-                diem.setMamon(teacherSubject);
+                diem.setMamon(selectedSubject);
                 diem.setNamhoc(globalNamHoc);
                 diem.setHocky(globalHocKy);
             } else {
@@ -378,7 +406,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 } else {
                     // Teacher/Admin
                     masv = getSafeString(view.getTable(), selectedRow, 0);
-                    mamon = teacherSubject;
+                    mamon = selectedSubject;
                     hocky = globalHocKy;
 
                     if (userType == 0) {
@@ -423,12 +451,12 @@ public class ModernDiemController implements ActionListener, MouseListener {
 
             // Kiểm tra quyền môn học cho giáo viên
             if (userType == 1) {
-                if (teacherSubject == null) {
+                if (selectedSubject == null) {
                     showStatusMessage("Giáo viên chưa được phân công môn học", MessageType.WARNING);
                     return;
                 }
-                if (!diem.getMamon().equals(teacherSubject)) {
-                    showStatusMessage("Giáo viên chỉ có thể nhập điểm cho môn " + teacherSubject, MessageType.WARNING);
+                if (!diem.getMamon().equals(selectedSubject)) {
+                    showStatusMessage("Giáo viên chỉ có thể nhập điểm cho môn " + selectedSubject, MessageType.WARNING);
                     return;
                 }
             }
@@ -549,7 +577,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
         } else if (userType == 1) { // Giáo viên - chỉ thấy môn của mình
             for (DiemModel diem : allResults) {
                 // Lọc theo môn học của giáo viên
-                if (teacherSubject != null && teacherSubject.equals(diem.getMamon())) {
+                if (selectedSubject != null && selectedSubject.equals(diem.getMamon())) {
                     // Nếu đã chọn lớp thì lọc thêm theo lớp
                     if (selectedLop != null) {
                         if (model.checkSinhVienTrongLop(diem.getMasv(), selectedLop)) {
@@ -655,7 +683,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
 
                         // Set context fields
                         if (userType == 1) { // Teacher
-                            diem.setMamon(teacherSubject);
+                            diem.setMamon(selectedSubject);
                         } else {
                             // Admin view might need MaMon if it shows all?
                             // Wait, Admin view loads ALL points, but table structure I defined in
@@ -677,7 +705,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
                             // ERROR: Admin view seems broken by this column change if it displays ALL
                             // subjects mixed.
                             // But user complaint was about TEACHER view. Let's fix TEACHER first.
-                            diem.setMamon(teacherSubject != null ? teacherSubject : "");
+                            diem.setMamon(selectedSubject != null ? selectedSubject : "");
                         }
                         diem.setNamhoc(globalNamHoc);
                         diem.setHocky(globalHocKy);
@@ -806,7 +834,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
             ArrayList<DiemModel> allDiem;
             if (userType == 1) {
                 // Giáo viên chỉ kiểm tra trong phạm vi môn của mình
-                allDiem = model.getDiemByMon(teacherSubject);
+                allDiem = model.getDiemByMon(selectedSubject);
             } else {
                 allDiem = model.getAllDiem();
             }

@@ -9,9 +9,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-/**
- * Panel quản lý giáo viên cho Admin
- */
 public class QuanLyGiaoVienPanel extends JPanel {
 
     private static final Color PRIMARY_COLOR = new Color(63, 81, 181);
@@ -26,13 +23,15 @@ public class QuanLyGiaoVienPanel extends JPanel {
     private JTextField tfMagv;
     private JTextField tfHoten;
     private JComboBox<String> cbGioitinh;
-    private JTextField dpNgaysinh; // Changed from DatePicker to JTextField
+    private JTextField dpNgaysinh;
     private JTextField tfEmail;
     private JTextField tfSdt;
 
-    private JComboBox<String> cbMonHoc;
+    private JComboBox<String> cbBoMon;
+    private JList<CheckListItem> listMonHoc; // Checkbox List
+    private DefaultListModel<CheckListItem> listModelMonHoc;
+    private JScrollPane scrollMonHoc;
 
-    // Search fields
     private JTextField tfSearch;
     private JButton btnTimKiem;
 
@@ -40,6 +39,8 @@ public class QuanLyGiaoVienPanel extends JPanel {
     private JButton btnSua;
     private JButton btnXoa;
     private JButton btnLamMoi;
+
+    private JLabel lblMonHocHint;
 
     public QuanLyGiaoVienPanel() {
         initComponents();
@@ -55,14 +56,40 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfHoten = createTextField();
         cbGioitinh = new JComboBox<>(new String[] { "Nam", "Nữ" });
 
-        // Removed DatePickerSettings and related configurations
-        dpNgaysinh = new JTextField(); // Changed from DatePicker to JTextField
-        dpNgaysinh.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14)); // Apply font directly
-        dpNgaysinh.setPreferredSize(new java.awt.Dimension(200, 35));
+        dpNgaysinh = new JTextField();
+        dpNgaysinh.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        dpNgaysinh.setPreferredSize(new Dimension(200, 35));
         tfEmail = createTextField();
         tfSdt = createTextField();
 
-        cbMonHoc = new JComboBox<>();
+        cbBoMon = new JComboBox<>();
+        cbBoMon.setPreferredSize(new Dimension(200, 35));
+
+        listModelMonHoc = new DefaultListModel<>();
+        listMonHoc = new JList<>(listModelMonHoc);
+        listMonHoc.setCellRenderer(new CheckListRenderer());
+        listMonHoc.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Mouse Listener for toggling
+        listMonHoc.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent event) {
+                JList<CheckListItem> list = (JList<CheckListItem>) event.getSource();
+                int index = list.locationToIndex(event.getPoint());
+                if (index >= 0) {
+                    CheckListItem item = list.getModel().getElementAt(index);
+                    item.setSelected(!item.isSelected());
+                    list.repaint(list.getCellBounds(index, index));
+                }
+            }
+        });
+
+        scrollMonHoc = new JScrollPane(listMonHoc);
+        scrollMonHoc.setPreferredSize(new Dimension(200, 150)); // Taller
+
+        lblMonHocHint = new JLabel("Click để chọn/bỏ chọn môn");
+        lblMonHocHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
+        lblMonHocHint.setForeground(Color.GRAY);
 
         // Search components
         tfSearch = new JTextField();
@@ -72,14 +99,13 @@ public class QuanLyGiaoVienPanel extends JPanel {
         btnTimKiem = createButton("Tìm", PRIMARY_COLOR);
 
         // Buttons
-        // Buttons
         btnThem = createButton("Thêm", SUCCESS_COLOR);
         btnSua = createButton("Sửa", PRIMARY_COLOR);
         btnXoa = createButton("Xóa", DANGER_COLOR);
         btnLamMoi = createButton("Làm mới", Color.GRAY);
 
         // Table
-        String[] columns = { "Mã GV", "Họ tên", "Giới tính", "Ngày sinh", "Email", "SĐT", "Mã môn học", "Tên môn học" };
+        String[] columns = { "Mã GV", "Họ tên", "Giới tính", "Ngày sinh", "Email", "SĐT", "Bộ Môn", "Môn dạy" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -158,7 +184,13 @@ public class QuanLyGiaoVienPanel extends JPanel {
         formPanel.add(createFormField("Email:", tfEmail));
         formPanel.add(createFormField("SĐT:", tfSdt));
 
-        formPanel.add(createFormField("Môn học:", cbMonHoc));
+        formPanel.add(createFormField("Bộ môn:", cbBoMon));
+        formPanel.add(createFormFieldList("Môn dạy:", scrollMonHoc));
+
+        JPanel pnlHint = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        pnlHint.setBackground(CARD_COLOR);
+        pnlHint.add(lblMonHocHint);
+        formPanel.add(pnlHint);
 
         formPanel.add(Box.createVerticalStrut(20));
 
@@ -193,6 +225,21 @@ public class QuanLyGiaoVienPanel extends JPanel {
         return fieldPanel;
     }
 
+    private JPanel createFormFieldList(String label, JComponent component) {
+        JPanel fieldPanel = new JPanel(new BorderLayout(5, 5));
+        fieldPanel.setBackground(CARD_COLOR);
+        fieldPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100)); // Taller for List
+
+        JLabel fieldLabel = new JLabel(label);
+        fieldLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        fieldLabel.setPreferredSize(new Dimension(120, 25));
+
+        fieldPanel.add(fieldLabel, BorderLayout.WEST);
+        fieldPanel.add(component, BorderLayout.CENTER);
+
+        return fieldPanel;
+    }
+
     private JPanel createTablePanel() {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(CARD_COLOR);
@@ -206,7 +253,6 @@ public class QuanLyGiaoVienPanel extends JPanel {
         return tablePanel;
     }
 
-    // Public methods
     public void loadTableData(ArrayList<GiaoVienModel> data) {
         tableModel.setRowCount(0);
         for (GiaoVienModel gv : data) {
@@ -214,12 +260,11 @@ public class QuanLyGiaoVienPanel extends JPanel {
                     gv.getMagv(),
                     gv.getHoten(),
                     gv.getGioitinh(),
-                    formatDate(gv.getNgaysinh()), // Format Date
+                    formatDate(gv.getNgaysinh()),
                     gv.getEmail(),
                     gv.getSdt(),
-                    // gv.getMakhoa(), // Removed
-                    gv.getMamon(),
-                    gv.getTenMon()
+                    gv.getTenbomon(), // Show Dept Name
+                    gv.getTenCacMon() // Show comma separated Subjects
             };
             tableModel.addRow(row);
         }
@@ -237,11 +282,23 @@ public class QuanLyGiaoVienPanel extends JPanel {
         }
     }
 
-    public void loadMonHoc(ArrayList<String> listMonHoc) {
-        cbMonHoc.removeAllItems();
-        for (String mon : listMonHoc) {
-            cbMonHoc.addItem(mon);
+    public void loadBoMon(ArrayList<String> listBoMon) {
+        cbBoMon.removeAllItems();
+        cbBoMon.addItem("-- Chọn Bộ Môn --");
+        for (String bm : listBoMon) {
+            cbBoMon.addItem(bm);
         }
+    }
+
+    public void loadMonHoc(ArrayList<String> subjects) {
+        listModelMonHoc.clear();
+        for (String mon : subjects) {
+            listModelMonHoc.addElement(new CheckListItem(mon));
+        }
+    }
+
+    public JComboBox<String> getCbBoMon() {
+        return cbBoMon;
     }
 
     public GiaoVienModel getFormData() {
@@ -249,18 +306,31 @@ public class QuanLyGiaoVienPanel extends JPanel {
         gv.setMagv(tfMagv.getText().trim());
         gv.setHoten(tfHoten.getText().trim());
         gv.setGioitinh((String) cbGioitinh.getSelectedItem());
-        String dateStr = dpNgaysinh.getText().trim(); // Use TextField
+        String dateStr = dpNgaysinh.getText().trim();
         gv.setNgaysinh(dateStr);
         gv.setEmail(tfEmail.getText().trim());
         gv.setSdt(tfSdt.getText().trim());
 
-        // Get mon hoc - extract mã môn từ selection "MH01 - Toán"
-        String monSelection = (String) cbMonHoc.getSelectedItem();
-        if (monSelection != null && monSelection.contains(" - ")) {
-            gv.setMamon(monSelection.split(" - ")[0]); // Lấy mã môn
-        } else {
-            gv.setMamon(monSelection); // Nếu không có format thì dùng trực tiếp
+        // Get Bo Mon
+        String bmSel = (String) cbBoMon.getSelectedItem();
+        if (bmSel != null && bmSel.contains(" - ")) {
+            gv.setMabomon(bmSel.split(" - ")[0]);
         }
+
+        // Get Mon Hocs
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < listModelMonHoc.getSize(); i++) {
+            CheckListItem item = listModelMonHoc.getElementAt(i);
+            if (item.isSelected()) {
+                String val = item.toString();
+                if (val.contains(" - ")) {
+                    if (sb.length() > 0)
+                        sb.append(",");
+                    sb.append(val.split(" - ")[0]);
+                }
+            }
+        }
+        gv.setCacMon(sb.toString());
 
         return gv;
     }
@@ -278,34 +348,70 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfEmail.setText(gv.getEmail() != null ? gv.getEmail() : "");
         tfSdt.setText(gv.getSdt() != null ? gv.getSdt() : "");
 
-        // Set môn học - tìm và select đúng item
-        if (gv.getMamon() != null) {
-            boolean found = false;
-            for (int i = 0; i < cbMonHoc.getItemCount(); i++) {
-                String item = cbMonHoc.getItemAt(i);
-                if (item != null && item.startsWith(gv.getMamon() + " - ")) {
-                    cbMonHoc.setSelectedIndex(i);
-                    found = true;
+        // Select Bo Mon
+        if (gv.getMabomon() != null) {
+            for (int i = 0; i < cbBoMon.getItemCount(); i++) {
+                String item = cbBoMon.getItemAt(i);
+                if (item.startsWith(gv.getMabomon() + " - ")) {
+                    cbBoMon.setSelectedIndex(i);
                     break;
                 }
             }
-            if (!found) {
-                // Try selecting by value alone if not found by prefix
-                cbMonHoc.setSelectedItem(gv.getMamon());
-            }
         } else {
-            cbMonHoc.setSelectedIndex(0);
+            cbBoMon.setSelectedIndex(0);
         }
+
+        // Select Mon Hocs
+        // Note: Controller will load subjects into listMonHoc based on cbBoMon
+        // selection
+        // We need to wait for list to populate? or list is populated because fillForm
+        // is called after selecting row
+        // which triggers controller to load data. Use setSelectedIndices
+        // This is tricky. Controller should handle selection after list load.
+        // We will store the "subjects to select" in a temporary property or simply
+        // return them via logic.
+        // Here we can't easily select if data isn't loaded.
+        // The controller should handle "Fill Form" -> "Set Bo Mon" -> "Load Subjects"
+        // -> "Select Subjects".
+    }
+
+    // Helper to select subjects roughly
+    public void setSelectedSubjects(String csvSubjects) {
+        // First uncheck all
+        for (int i = 0; i < listModelMonHoc.getSize(); i++) {
+            listModelMonHoc.getElementAt(i).setSelected(false);
+        }
+
+        if (csvSubjects == null || csvSubjects.isEmpty()) {
+            listMonHoc.repaint();
+            return;
+        }
+
+        String[] codes = csvSubjects.split(",");
+        for (String code : codes) {
+            code = code.trim();
+            for (int i = 0; i < listModelMonHoc.getSize(); i++) {
+                CheckListItem item = listModelMonHoc.getElementAt(i);
+                if (item.toString().startsWith(code + " - ")) {
+                    item.setSelected(true);
+                    break;
+                }
+            }
+        }
+        listMonHoc.repaint();
     }
 
     public void clearForm() {
         tfMagv.setText("");
         tfHoten.setText("");
         cbGioitinh.setSelectedIndex(0);
-        dpNgaysinh.setText(""); // Replacement for clear()
+        dpNgaysinh.setText("");
         tfEmail.setText("");
         tfSdt.setText("");
-        cbMonHoc.setSelectedIndex(0);
+        cbBoMon.setSelectedIndex(0);
+        // listMonHoc will be cleared or reloaded by controller
+        if (listModelMonHoc != null)
+            listModelMonHoc.clear();
         tblGiaoVien.clearSelection();
     }
 

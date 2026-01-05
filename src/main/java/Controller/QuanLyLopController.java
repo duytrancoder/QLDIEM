@@ -47,7 +47,7 @@ public class QuanLyLopController implements ActionListener, MouseListener {
     }
 
     private void loadGiaoVien() {
-        ArrayList<GiaoVienModel> listGV = gvModel.getAllGiaoVien();
+        ArrayList<GiaoVienModel> listGV = gvModel.fetchAllTeachers();
         ArrayList<String> gvNames = new ArrayList<>();
         for (GiaoVienModel gv : listGV) {
             gvNames.add(gv.getMagv() + " - " + gv.getHoten());
@@ -93,6 +93,20 @@ public class QuanLyLopController implements ActionListener, MouseListener {
             return;
         }
 
+        // Check if teacher is already homeroom for another class
+        String magvcn = lopData.getMagvcn();
+        if (magvcn != null && !magvcn.trim().isEmpty()) {
+            if (model.isTeacherAlreadyHomeroom(magvcn, null)) {
+                String existingClass = model.getHomeroomClassByTeacher(magvcn);
+                JOptionPane.showMessageDialog(view,
+                        "Giáo viên này đã là chủ nhiệm lớp " + existingClass + "!\n" +
+                                "Mỗi giáo viên chỉ có thể làm chủ nhiệm cho 1 lớp.",
+                        "Không thể thêm",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
         if (lopData.addLop()) {
             JOptionPane.showMessageDialog(view, "Thêm lớp thành công!");
             view.clearForm();
@@ -130,6 +144,20 @@ public class QuanLyLopController implements ActionListener, MouseListener {
             JOptionPane.showMessageDialog(view, "Không được thay đổi Mã Lớp!");
             view.fillForm(model.getLopByMalop(selectedMalop)); // Reset form to selected data
             return;
+        }
+
+        // Check if teacher is already homeroom for another class
+        String magvcn = lopData.getMagvcn();
+        if (magvcn != null && !magvcn.trim().isEmpty()) {
+            if (model.isTeacherAlreadyHomeroom(magvcn, selectedMalop)) {
+                String existingClass = model.getHomeroomClassByTeacher(magvcn);
+                JOptionPane.showMessageDialog(view,
+                        "Giáo viên này đã là chủ nhiệm lớp " + existingClass + "!\n" +
+                                "Mỗi giáo viên chỉ có thể làm chủ nhiệm cho 1 lớp.",
+                        "Không thể cập nhật",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
         }
 
         if (lopData.updateLop()) {

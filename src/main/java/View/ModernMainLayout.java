@@ -34,9 +34,11 @@ public class ModernMainLayout extends JFrame {
     private ModernButton btnSinhVien;
     private ModernButton btnGiaoVien;
     private ModernButton btnLop;
-    private ModernButton btnQuanLyLop; // Thêm button mới
-    private ModernButton btnKhoaSo; // Khóa sổ & Niên khóa (Admin only)
-    private ModernButton btnThongBao; // Button Thong Bao
+    private ModernButton btnQuanLyLop;
+    private ModernButton btnQuanLyBoMon; // New Button
+    private ModernButton btnKhoaSo;
+    private ModernButton btnThongBao;
+    private ModernButton btnHomeroomClass; // Homeroom button for teachers
 
     private ModernButton btnMonHoc;
     private ModernButton btnBaoCao;
@@ -130,12 +132,18 @@ public class ModernMainLayout extends JFrame {
         // Create buttons
         btnDashboard = new ModernButton("Tổng quan", PRIMARY_COLOR);
         btnDiem = new ModernButton("Quản lý Điểm", PRIMARY_COLOR);
+
+        // Homeroom button for teachers
+        btnHomeroomClass = new ModernButton("Lớp chủ nhiệm", PRIMARY_COLOR);
+        btnHomeroomClass.setVisible(false); // Hidden by default, shown for homeroom teachers
+
         btnSinhVien = new ModernButton("Sinh viên", PRIMARY_COLOR);
         btnGiaoVien = new ModernButton("Giáo viên", PRIMARY_COLOR);
         btnLop = new ModernButton("Phân lớp", PRIMARY_COLOR);
-        btnQuanLyLop = new ModernButton("Quản lý Lớp", PRIMARY_COLOR); // Thêm button mới
-        btnKhoaSo = new ModernButton("Khóa sổ & NK", PRIMARY_COLOR); // Admin function
-        btnThongBao = new ModernButton("Thông báo", PRIMARY_COLOR); // Thong bao
+        btnQuanLyLop = new ModernButton("Quản lý Lớp", PRIMARY_COLOR);
+        btnQuanLyBoMon = new ModernButton("Quản lý Bộ môn", PRIMARY_COLOR); // New
+        btnKhoaSo = new ModernButton("Khóa sổ & NK", PRIMARY_COLOR);
+        btnThongBao = new ModernButton("Thông báo", PRIMARY_COLOR);
 
         btnMonHoc = new ModernButton("Môn học", PRIMARY_COLOR);
         btnBaoCao = new ModernButton("Báo cáo", SUCCESS_COLOR);
@@ -147,19 +155,22 @@ public class ModernMainLayout extends JFrame {
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnDiem);
         menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(btnHomeroomClass); // Homeroom button
+        menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnSinhVien);
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnGiaoVien);
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnLop);
         menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnQuanLyLop); // Thêm button mới vào menu
+        menuPanel.add(btnQuanLyLop);
+        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(btnQuanLyBoMon); // Add
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnKhoaSo);
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnThongBao);
         menuPanel.add(Box.createVerticalStrut(5));
-
         menuPanel.add(btnMonHoc);
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnBaoCao);
@@ -172,12 +183,8 @@ public class ModernMainLayout extends JFrame {
     }
 
     private void createContentArea() {
-        // Add welcome dashboard
         JPanel dashboardPanel = createDashboard();
         mainContentPanel.add(dashboardPanel, "DASHBOARD");
-
-        // Các panel khác sẽ được thêm bởi ModernMainController
-        // để tránh tạo trùng lặp và đảm bảo đúng phân quyền
     }
 
     private JPanel createDashboard() {
@@ -185,7 +192,6 @@ public class ModernMainLayout extends JFrame {
         dashboard.setBackground(BACKGROUND_COLOR);
         dashboard.setBorder(new EmptyBorder(30, 30, 30, 30));
 
-        // Welcome header
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setBackground(BACKGROUND_COLOR);
 
@@ -206,21 +212,18 @@ public class ModernMainLayout extends JFrame {
         headerPanel.add(welcomePanel);
         dashboard.add(headerPanel, BorderLayout.NORTH);
 
-        // Stats cards
         JPanel statsPanel = createStatsPanel();
         dashboard.add(statsPanel, BorderLayout.CENTER);
 
         return dashboard;
     }
 
-    // Map to store stat value labels for updates
     private java.util.Map<String, JLabel> statLabels = new java.util.HashMap<>();
 
     private JPanel createStatsPanel() {
         JPanel statsPanel = new JPanel();
 
         if (userType == 0) { // Admin
-            // Set grid to 2x2 : 4 items
             statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
             statsPanel.setBackground(BACKGROUND_COLOR);
             statsPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
@@ -228,13 +231,8 @@ public class ModernMainLayout extends JFrame {
             statsPanel.add(createStatsCard("SV", "Tổng Sinh viên", "...", SUCCESS_COLOR));
             statsPanel.add(createStatsCard("GV", "Tổng Giáo viên", "...", PRIMARY_COLOR));
             statsPanel.add(createStatsCard("Lớp", "Tổng Lớp", "...", ACCENT_COLOR));
-            // statsPanel.add(createStatsCard("Điểm", "Tổng hồ sơ điểm", "...",
-            // WARNING_COLOR)); // Removed
             statsPanel.add(createStatsCard("Môn", "Tổng Môn", "...", SUCCESS_COLOR));
-            // statsPanel.add(createStatsCard("TB", "Điểm TB hệ thống", "...",
-            // PRIMARY_COLOR)); // Removed
         } else if (userType == 1) { // Giáo viên
-            // Set grid to 2x2 : 4 items
             statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
             statsPanel.setBackground(BACKGROUND_COLOR);
             statsPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
@@ -243,10 +241,6 @@ public class ModernMainLayout extends JFrame {
             statsPanel.add(createStatsCard("Điểm", "Điểm đã chấm", "...", PRIMARY_COLOR));
             statsPanel.add(createStatsCard("Môn", "Môn phụ trách", "...", ACCENT_COLOR));
             statsPanel.add(createStatsCard("Lớp", "Lớp quản lý", "...", WARNING_COLOR));
-            // statsPanel.add(createStatsCard("TB", "Điểm TB lớp", "...", SUCCESS_COLOR));
-            // // Removed
-            // statsPanel.add(createStatsCard("DiemGioi", "Số SV Giỏi", "...",
-            // PRIMARY_COLOR)); // Removed
         } else { // Sinh viên
             statsPanel.add(createStatsCard("Môn", "Tổng môn học", "...", PRIMARY_COLOR));
             statsPanel.add(createStatsCard("TB", "Điểm TB", "...", SUCCESS_COLOR));
@@ -273,13 +267,11 @@ public class ModernMainLayout extends JFrame {
                 BorderFactory.createLineBorder(new Color(0, 0, 0, 20), 1),
                 new EmptyBorder(20, 20, 20, 20)));
 
-        // Icon (text thay vì emoji)
         JLabel iconLabel = new JLabel(icon);
         iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
         iconLabel.setForeground(accentColor);
 
-        // Content
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(Color.WHITE);
@@ -294,7 +286,6 @@ public class ModernMainLayout extends JFrame {
         valueLabel.setForeground(accentColor);
         valueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Store label for updates using the icon key (which doubles as ID here)
         statLabels.put(icon, valueLabel);
 
         contentPanel.add(titleLabel);
@@ -307,59 +298,22 @@ public class ModernMainLayout extends JFrame {
         return card;
     }
 
-    private JPanel createComingSoonPanel(String featureName) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BACKGROUND_COLOR);
-
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setBackground(BACKGROUND_COLOR);
-
-        JLabel iconLabel = new JLabel("Đang phát triển");
-        iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 24));
-        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        iconLabel.setForeground(TEXT_SECONDARY);
-
-        JLabel titleLabel = new JLabel(featureName);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titleLabel.setForeground(TEXT_PRIMARY);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel subtitleLabel = new JLabel("Chức năng đang được phát triển...");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitleLabel.setForeground(TEXT_SECONDARY);
-        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        centerPanel.add(Box.createVerticalGlue());
-        centerPanel.add(iconLabel);
-        centerPanel.add(Box.createVerticalStrut(20));
-        centerPanel.add(titleLabel);
-        centerPanel.add(Box.createVerticalStrut(10));
-        centerPanel.add(subtitleLabel);
-        centerPanel.add(Box.createVerticalGlue());
-
-        panel.add(centerPanel, BorderLayout.CENTER);
-        return panel;
-    }
-
     private void setupLayout() {
         setLayout(new BorderLayout());
         add(sidebarPanel, BorderLayout.WEST);
         add(mainContentPanel, BorderLayout.CENTER);
-
-        // Add shadows (simple border effect)
         sidebarPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0, 0, 0, 50)));
     }
 
     private void setupRolePermissions() {
         switch (userType) {
-
             case 2: // Sinh viên
                 btnSinhVien.setVisible(false);
                 btnGiaoVien.setVisible(false);
                 btnLop.setVisible(false);
+                btnQuanLyLop.setVisible(false);
+                btnQuanLyBoMon.setVisible(false); // Hide
                 btnKhoaSo.setVisible(false);
-                // btnKhoa.setVisible(false); // Deleted
                 btnMonHoc.setVisible(false);
                 btnBaoCao.setVisible(false);
                 btnCaiDat.setVisible(false);
@@ -368,20 +322,19 @@ public class ModernMainLayout extends JFrame {
                 btnSinhVien.setVisible(false);
                 btnGiaoVien.setVisible(false);
                 btnLop.setVisible(false);
+                btnQuanLyLop.setVisible(false);
+                btnQuanLyBoMon.setVisible(false); // Hide
                 btnKhoaSo.setVisible(false);
-                // btnKhoa.setVisible(false); // Deleted
                 btnMonHoc.setVisible(false);
                 btnBaoCao.setVisible(false);
                 btnCaiDat.setVisible(false);
+                btnHomeroomClass.setVisible(true); // Show homeroom button for all teachers
                 break;
-            case 0: // Admin - chỉ hiện các chức năng cần thiết
-                btnDiem.setVisible(false); // Xóa Quản lý Điểm
-                // btnKhoaSo is visible for Admin
-                // btnKhoa.setVisible(false); // Deleted - Xóa quản lý Khoa
-                btnMonHoc.setVisible(false); // Xóa quản lý Môn học
-                btnBaoCao.setVisible(false); // Xóa Báo cáo
-                btnCaiDat.setVisible(false); // Xóa Cài đặt
-                // Chỉ giữ: Sinh viên, Giáo viên, Phân lớp
+            case 0: // Admin
+                btnDiem.setVisible(false);
+
+                btnBaoCao.setVisible(false);
+                btnCaiDat.setVisible(false);
                 break;
         }
     }
@@ -414,6 +367,10 @@ public class ModernMainLayout extends JFrame {
         btnDiem.addActionListener(l);
     }
 
+    public void onHomeroomClick(ActionListener l) {
+        btnHomeroomClass.addActionListener(l);
+    }
+
     public void onSinhVienClick(ActionListener l) {
         btnSinhVien.addActionListener(l);
     }
@@ -428,7 +385,11 @@ public class ModernMainLayout extends JFrame {
 
     public void onQuanLyLopClick(ActionListener l) {
         btnQuanLyLop.addActionListener(l);
-    } // Thêm method mới
+    }
+
+    public void onQuanLyBoMonClick(ActionListener l) {
+        btnQuanLyBoMon.addActionListener(l);
+    } // New
 
     public void onKhoaSoClick(ActionListener l) {
         btnKhoaSo.addActionListener(l);
@@ -454,7 +415,6 @@ public class ModernMainLayout extends JFrame {
         btnDangXuat.addActionListener(l);
     }
 
-    // Getters
     public JPanel getMainContentPanel() {
         return mainContentPanel;
     }
@@ -465,8 +425,6 @@ public class ModernMainLayout extends JFrame {
 
     public void showPanel(String panelName) {
         cardLayout.show(mainContentPanel, panelName);
-
-        // Update button states
         resetButtonStates();
         switch (panelName) {
             case "DASHBOARD":
@@ -483,14 +441,16 @@ public class ModernMainLayout extends JFrame {
                 break;
             case "LOP":
                 btnQuanLyLop.setSelected(true);
-                break; // Cập nhật để dùng button Quản lý Lớp
+                break;
+            case "BOMON":
+                btnQuanLyBoMon.setSelected(true);
+                break; // New
             case "PHANCONG":
                 btnLop.setSelected(true);
                 break;
             case "THONGBAO":
                 btnThongBao.setSelected(true);
                 break;
-
             case "MONHOC":
                 btnMonHoc.setSelected(true);
                 break;
@@ -509,8 +469,12 @@ public class ModernMainLayout extends JFrame {
         btnSinhVien.setSelected(false);
         btnGiaoVien.setSelected(false);
         btnLop.setSelected(false);
-        btnLop.setSelected(false);
         btnQuanLyLop.setSelected(false);
-        btnThongBao.setSelected(false); // Reset button moi
+        btnQuanLyBoMon.setSelected(false); // Reset
+        btnKhoaSo.setSelected(false);
+        btnThongBao.setSelected(false);
+        btnMonHoc.setSelected(false);
+        btnBaoCao.setSelected(false);
+        btnCaiDat.setSelected(false);
     }
 }

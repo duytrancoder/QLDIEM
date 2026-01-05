@@ -44,6 +44,8 @@ public class ModernDiemPanel extends JPanel {
     private JTextField tfSearch;
     private JComboBox<String> cbLop; // Dropdown chọn lớp (cho giáo viên)
     private JLabel lblLop; // Label cho dropdown lớp
+    private JComboBox<String> cbMonHoc; // Dropdown chọn môn (cho giáo viên)
+    private JLabel lblMonHoc; // Label cho dropdown môn
 
     private JButton btnThem;
     private JButton btnSua;
@@ -115,6 +117,15 @@ public class ModernDiemPanel extends JPanel {
         lblLop = new JLabel("Chọn lớp:");
         lblLop.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblLop.setForeground(TEXT_PRIMARY);
+
+        // Dropdown chọn môn học (cho giáo viên)
+        cbMonHoc = new JComboBox<>();
+        cbMonHoc.addItem("-- Chọn môn --");
+        cbMonHoc.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cbMonHoc.setPreferredSize(new Dimension(200, 35));
+        lblMonHoc = new JLabel("Chọn môn học:");
+        lblMonHoc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblMonHoc.setForeground(TEXT_PRIMARY);
 
         // Initially hide save/cancel buttons
         btnLuu.setVisible(false);
@@ -351,9 +362,14 @@ public class ModernDiemPanel extends JPanel {
                 BorderFactory.createLineBorder(new Color(222, 226, 230), 1),
                 new EmptyBorder(20, 20, 20, 20)));
 
-        // Search panel
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Search panel - Use BoxLayout to ensure all components are visible
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
         searchPanel.setBackground(CARD_COLOR);
+
+        // Row 1: Search box
+        JPanel searchRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchRow.setBackground(CARD_COLOR);
 
         JLabel searchLabel = new JLabel("Tìm kiếm:");
         searchLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -362,9 +378,22 @@ public class ModernDiemPanel extends JPanel {
         tfSearch.setPreferredSize(new Dimension(250, 35));
         btnSearch.setPreferredSize(new Dimension(45, 35));
 
-        searchPanel.add(searchLabel);
-        searchPanel.add(tfSearch);
-        searchPanel.add(btnSearch);
+        searchRow.add(searchLabel);
+        searchRow.add(tfSearch);
+        searchRow.add(btnSearch);
+
+        // Row 2: Class and Subject dropdowns (for teachers)
+        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        filterRow.setBackground(CARD_COLOR);
+
+        filterRow.add(lblLop);
+        filterRow.add(cbLop);
+        filterRow.add(Box.createHorizontalStrut(15)); // Spacer
+        filterRow.add(lblMonHoc);
+        filterRow.add(cbMonHoc);
+
+        searchPanel.add(searchRow);
+        searchPanel.add(filterRow);
 
         // Table with scroll
         JScrollPane scrollPane = new JScrollPane(tblDiem);
@@ -714,9 +743,48 @@ public class ModernDiemPanel extends JPanel {
         cbLop.addItemListener(listener);
     }
 
+    /**
+     * Programmatically select a class by its code
+     */
+    public void selectLopByCode(String malop) {
+        for (int i = 0; i < cbLop.getItemCount(); i++) {
+            String item = cbLop.getItemAt(i);
+            if (item != null && item.startsWith(malop + " - ")) {
+                cbLop.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
     // Methods for teacher subject restriction
     public void setTeacherSubject(String mamon, String tenmon) {
         // Hiển thị tên môn học trên UI (có thể thêm label hoặc title)
+    }
+
+    // Methods for dynamic subject selection
+    public void loadMonHoc(ArrayList<String> subjects) {
+        cbMonHoc.removeAllItems();
+        cbMonHoc.addItem("-- Chọn môn --");
+        for (String s : subjects) {
+            cbMonHoc.addItem(s);
+        }
+    }
+
+    public String getSelectedMonHoc() {
+        String selection = (String) cbMonHoc.getSelectedItem();
+        if (selection != null && !selection.startsWith("--") && selection.contains(" - ")) {
+            return selection.split(" - ")[0]; // Return subject code
+        }
+        return null;
+    }
+
+    public void setMonHocVisible(boolean visible) {
+        lblMonHoc.setVisible(visible);
+        cbMonHoc.setVisible(visible);
+    }
+
+    public void addMonHocChangeListener(java.awt.event.ItemListener listener) {
+        cbMonHoc.addItemListener(listener);
     }
 
     public void lockSubjectField(String mamon, String tenmon) {

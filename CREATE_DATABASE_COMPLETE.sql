@@ -322,6 +322,8 @@ LEFT JOIN tblsinhvien sv ON c.malop = sv.malop
 GROUP BY c.malop, c.tenlop
 ORDER BY c.malop;
 
+ALTER TABLE tblbomon ADD COLUMN cacmon TEXT;
+
 -- ============================================
 -- HOÀN TẤT!
 -- ============================================
