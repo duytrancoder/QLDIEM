@@ -27,6 +27,7 @@ public class DiemModel {
     private double diemgk;
     private double diemck;
     private double diemtongket;
+    private String tenSV; // New field for display name
 
     public DiemModel() {
     }
@@ -34,6 +35,21 @@ public class DiemModel {
     public DiemModel(String masv, String mamon, int hocky, String namhoc, double diemcc, double diemgk, double diemck,
             double diemtongket) {
         this.masv = masv;
+        this.mamon = mamon;
+        this.hocky = hocky;
+        this.namhoc = namhoc;
+        this.diemcc = diemcc;
+        this.diemgk = diemgk;
+        this.diemck = diemck;
+        this.diemtongket = diemtongket;
+    }
+
+    // Constructor with name
+    public DiemModel(String masv, String tenSV, String mamon, int hocky, String namhoc, double diemcc, double diemgk,
+            double diemck,
+            double diemtongket) {
+        this.masv = masv;
+        this.tenSV = tenSV;
         this.mamon = mamon;
         this.hocky = hocky;
         this.namhoc = namhoc;
@@ -107,6 +123,14 @@ public class DiemModel {
         this.diemtongket = diemtongket;
     }
 
+    public String getTenSV() {
+        return tenSV;
+    }
+
+    public void setTenSV(String tenSV) {
+        this.tenSV = tenSV;
+    }
+
     /**
      * Tính điểm tổng kết dựa trên công thức:
      * Điểm trung bình môn = (Điểm đánh giá thường xuyên + 2* điểm giữa kỳ + 3* điểm
@@ -151,7 +175,7 @@ public class DiemModel {
     // Giữ lại phương thức này cho Admin/GV
     public ArrayList<DiemModel> getAllDiem() {
         ArrayList<DiemModel> list = new ArrayList<>();
-        String query = "SELECT * FROM tbldiem";
+        String query = "SELECT d.*, sv.hoten FROM tbldiem d LEFT JOIN tblsinhvien sv ON d.masv = sv.masv";
         try (Connection conn = DatabaseConnection.getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query)) {
@@ -159,16 +183,15 @@ public class DiemModel {
             while (rs.next()) {
                 DiemModel d = new DiemModel(
                         rs.getString("masv"),
+                        rs.getString("hoten"), // Fetch name
                         rs.getString("mamon"),
                         rs.getInt("hocky"),
                         rs.getString("namhoc"),
                         rs.getDouble("diemcc"),
                         rs.getDouble("diemgk"),
                         rs.getDouble("diemck"),
-                        rs.getDouble("diemtongket") // Nếu DB ko lưu cột này thì bỏ qua
-                );
+                        rs.getDouble("diemtongket"));
                 list.add(d);
-
             }
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi lấy danh sách điểm: " + e.getMessage());
@@ -184,7 +207,7 @@ public class DiemModel {
     public ArrayList<DiemModel> getDiemByUsername(String username) {
         ArrayList<DiemModel> list = new ArrayList<>();
         // Lấy masv từ username, sau đó lấy điểm theo masv
-        String query = "SELECT d.* FROM tbldiem d JOIN tblsinhvien sv ON d.masv = sv.masv WHERE sv.username = ?";
+        String query = "SELECT d.*, sv.hoten FROM tbldiem d JOIN tblsinhvien sv ON d.masv = sv.masv WHERE sv.username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, username);
@@ -192,6 +215,7 @@ public class DiemModel {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
                             rs.getString("masv"),
+                            rs.getString("hoten"),
                             rs.getString("mamon"),
                             rs.getInt("hocky"),
                             rs.getString("namhoc"),
@@ -217,7 +241,7 @@ public class DiemModel {
      */
     public ArrayList<DiemModel> getDiemByLop(String malop) {
         ArrayList<DiemModel> list = new ArrayList<>();
-        String query = "SELECT d.* FROM tbldiem d " +
+        String query = "SELECT d.*, sv.hoten FROM tbldiem d " +
                 "JOIN tblsinhvien sv ON d.masv = sv.masv " +
                 "WHERE sv.malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -228,6 +252,7 @@ public class DiemModel {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
                             rs.getString("masv"),
+                            rs.getString("hoten"),
                             rs.getString("mamon"),
                             rs.getInt("hocky"),
                             rs.getString("namhoc"),
@@ -253,7 +278,7 @@ public class DiemModel {
      */
     public ArrayList<DiemModel> getDiemByLopAndMon(String malop, String mamon) {
         ArrayList<DiemModel> list = new ArrayList<>();
-        String query = "SELECT d.* FROM tbldiem d " +
+        String query = "SELECT d.*, sv.hoten FROM tbldiem d " +
                 "JOIN tblsinhvien sv ON d.masv = sv.masv " +
                 "WHERE sv.malop = ? AND d.mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -265,6 +290,7 @@ public class DiemModel {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
                             rs.getString("masv"),
+                            rs.getString("hoten"),
                             rs.getString("mamon"),
                             rs.getInt("hocky"),
                             rs.getString("namhoc"),
@@ -290,7 +316,7 @@ public class DiemModel {
      */
     public ArrayList<DiemModel> getDiemByMon(String mamon) {
         ArrayList<DiemModel> list = new ArrayList<>();
-        String query = "SELECT * FROM tbldiem WHERE mamon = ?";
+        String query = "SELECT d.*, sv.hoten FROM tbldiem d JOIN tblsinhvien sv ON d.masv = sv.masv WHERE d.mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 
@@ -299,6 +325,7 @@ public class DiemModel {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
                             rs.getString("masv"),
+                            rs.getString("hoten"),
                             rs.getString("mamon"),
                             rs.getInt("hocky"),
                             rs.getString("namhoc"),
@@ -477,7 +504,7 @@ public class DiemModel {
 
     public ArrayList<DiemModel> search(String keyword) {
         ArrayList<DiemModel> list = new ArrayList<>();
-        String query = "SELECT d.* FROM tbldiem d " +
+        String query = "SELECT d.*, sv.hoten FROM tbldiem d " +
                 "JOIN tblsinhvien sv ON d.masv = sv.masv " +
                 "JOIN tblmonhoc mh ON d.mamon = mh.mamon " +
                 "WHERE d.masv LIKE ? OR sv.hoten LIKE ? OR d.mamon LIKE ? OR mh.tenmon LIKE ? OR d.namhoc LIKE ?";
@@ -495,6 +522,7 @@ public class DiemModel {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
                             rs.getString("masv"),
+                            rs.getString("hoten"),
                             rs.getString("mamon"),
                             rs.getInt("hocky"),
                             rs.getString("namhoc"),

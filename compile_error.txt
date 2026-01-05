@@ -1,0 +1,39 @@
+src\main\java\View\QuanLyGiaoVienPanel.java:4: error: package com.github.lgooddatepicker.components does not exist
+import com.github.lgooddatepicker.components.DatePicker;
+                                            ^
+src\main\java\View\QuanLyGiaoVienPanel.java:30: error: cannot find symbol
+    private DatePicker dpNgaysinh;
+            ^
+  symbol:   class DatePicker
+  location: class QuanLyGiaoVienPanel
+src\main\java\View\QuanLySinhVienPanel.java:4: error: package com.github.lgooddatepicker.components does not exist
+import com.github.lgooddatepicker.components.DatePicker;
+                                            ^
+src\main\java\View\QuanLySinhVienPanel.java:29: error: cannot find symbol
+    private DatePicker dpNgaysinh;
+            ^
+  symbol:   class DatePicker
+  location: class QuanLySinhVienPanel
+src\main\java\View\QuanLyGiaoVienPanel.java:59: error: package com.github.lgooddatepicker.components does not exist
+        com.github.lgooddatepicker.components.DatePickerSettings dateSettings = new com.github.lgooddatepicker.components.DatePickerSettings();
+                                             ^
+src\main\java\View\QuanLyGiaoVienPanel.java:59: error: package com.github.lgooddatepicker.components does not exist
+        com.github.lgooddatepicker.components.DatePickerSettings dateSettings = new com.github.lgooddatepicker.components.DatePickerSettings();
+                                                                                                                         ^
+src\main\java\View\QuanLyGiaoVienPanel.java:63: error: cannot find symbol
+        dpNgaysinh = new DatePicker(dateSettings);
+                         ^
+  symbol:   class DatePicker
+  location: class QuanLyGiaoVienPanel
+src\main\java\View\QuanLySinhVienPanel.java:55: error: package com.github.lgooddatepicker.components does not exist
+        com.github.lgooddatepicker.components.DatePickerSettings dateSettings = new com.github.lgooddatepicker.components.DatePickerSettings();
+                                             ^
+src\main\java\View\QuanLySinhVienPanel.java:55: error: package com.github.lgooddatepicker.components does not exist
+        com.github.lgooddatepicker.components.DatePickerSettings dateSettings = new com.github.lgooddatepicker.components.DatePickerSettings();
+                                                                                                                         ^
+src\main\java\View\QuanLySinhVienPanel.java:59: error: cannot find symbol
+        dpNgaysinh = new DatePicker(dateSettings);
+                         ^
+  symbol:   class DatePicker
+  location: class QuanLySinhVienPanel
+10 errors

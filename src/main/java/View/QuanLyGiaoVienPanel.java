@@ -1,7 +1,6 @@
 package View;
 
 import Model.GiaoVienModel;
-import com.github.lgooddatepicker.components.DatePicker;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -27,7 +26,7 @@ public class QuanLyGiaoVienPanel extends JPanel {
     private JTextField tfMagv;
     private JTextField tfHoten;
     private JComboBox<String> cbGioitinh;
-    private DatePicker dpNgaysinh;
+    private JTextField dpNgaysinh; // Changed from DatePicker to JTextField
     private JTextField tfEmail;
     private JTextField tfSdt;
 
@@ -56,12 +55,9 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfHoten = createTextField();
         cbGioitinh = new JComboBox<>(new String[] { "Nam", "Nữ" });
 
-        com.github.lgooddatepicker.components.DatePickerSettings dateSettings = new com.github.lgooddatepicker.components.DatePickerSettings();
-        dateSettings.setFormatForDatesCommonEra("dd/MM/yyyy");
-        dateSettings.setAllowKeyboardEditing(false);
-
-        dpNgaysinh = new DatePicker(dateSettings);
-        dpNgaysinh.getComponentDateTextField().setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14));
+        // Removed DatePickerSettings and related configurations
+        dpNgaysinh = new JTextField(); // Changed from DatePicker to JTextField
+        dpNgaysinh.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14)); // Apply font directly
         dpNgaysinh.setPreferredSize(new java.awt.Dimension(200, 35));
         tfEmail = createTextField();
         tfSdt = createTextField();
@@ -253,8 +249,8 @@ public class QuanLyGiaoVienPanel extends JPanel {
         gv.setMagv(tfMagv.getText().trim());
         gv.setHoten(tfHoten.getText().trim());
         gv.setGioitinh((String) cbGioitinh.getSelectedItem());
-        java.time.LocalDate date = dpNgaysinh.getDate();
-        gv.setNgaysinh(date != null ? date.toString() : "");
+        String dateStr = dpNgaysinh.getText().trim(); // Use TextField
+        gv.setNgaysinh(dateStr);
         gv.setEmail(tfEmail.getText().trim());
         gv.setSdt(tfSdt.getText().trim());
 
@@ -275,20 +271,9 @@ public class QuanLyGiaoVienPanel extends JPanel {
         cbGioitinh.setSelectedItem(gv.getGioitinh() != null ? gv.getGioitinh() : "Nam");
         String ngaysinh = gv.getNgaysinh();
         if (ngaysinh != null && !ngaysinh.isEmpty()) {
-            try {
-                // Try parsing standard SQL format first (yyyy-MM-dd)
-                dpNgaysinh.setDate(java.time.LocalDate.parse(ngaysinh));
-            } catch (Exception e) {
-                try {
-                    // Try parsing display format (dd/MM/yyyy)
-                    dpNgaysinh.setDate(java.time.LocalDate.parse(ngaysinh,
-                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                } catch (Exception ex) {
-                    dpNgaysinh.clear();
-                }
-            }
+            dpNgaysinh.setText(ngaysinh);
         } else {
-            dpNgaysinh.clear();
+            dpNgaysinh.setText("");
         }
         tfEmail.setText(gv.getEmail() != null ? gv.getEmail() : "");
         tfSdt.setText(gv.getSdt() != null ? gv.getSdt() : "");
@@ -305,10 +290,11 @@ public class QuanLyGiaoVienPanel extends JPanel {
                 }
             }
             if (!found) {
-                cbMonHoc.setSelectedIndex(-1);
+                // Try selecting by value alone if not found by prefix
+                cbMonHoc.setSelectedItem(gv.getMamon());
             }
         } else {
-            cbMonHoc.setSelectedIndex(-1);
+            cbMonHoc.setSelectedIndex(0);
         }
     }
 
@@ -316,11 +302,11 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfMagv.setText("");
         tfHoten.setText("");
         cbGioitinh.setSelectedIndex(0);
-        dpNgaysinh.clear();
+        dpNgaysinh.setText(""); // Replacement for clear()
         tfEmail.setText("");
         tfSdt.setText("");
-
-        cbMonHoc.setSelectedIndex(-1);
+        cbMonHoc.setSelectedIndex(0);
+        tblGiaoVien.clearSelection();
     }
 
     public void addActionListener(ActionListener listener) {

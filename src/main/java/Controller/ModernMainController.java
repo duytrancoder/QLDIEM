@@ -7,6 +7,7 @@ import View.QuanLyLopPanel;
 import View.PhanCongGiaoVienPanel;
 import View.QuanLySinhVienPanel;
 import View.QuanLyGiaoVienPanel;
+import View.KhoaSoNienKhoaPanel; // Import new panel
 import Controller.QuanLyLopController;
 import Controller.PhanCongGiaoVienController;
 import Controller.QuanLySinhVienController;
@@ -82,6 +83,10 @@ public class ModernMainController {
             // fetching is complex, use username.
             new Controller.QuanLyThongBaoController(tbPanel, username, 0, "Admin");
 
+            // Khóa sổ & Niên khóa
+            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel();
+            view.getMainContentPanel().add(khoaSoPanel, "KHOASO");
+
         } else if (userType == 1) { // Teacher
             // Thông báo (Teacher) -> Wrapper
             View.QuanLyThongBaoPanel sendPanel = new View.QuanLyThongBaoPanel(1); // Manage
@@ -115,6 +120,7 @@ public class ModernMainController {
             view.onGiaoVienClick(e -> view.showPanel("GIAOVIEN")); // Quản lý giáo viên
             view.onLopClick(e -> view.showPanel("PHANCONG")); // Phân lớp
             view.onQuanLyLopClick(e -> view.showPanel("LOP")); // Quản lý lớp
+            view.onKhoaSoClick(e -> view.showPanel("KHOASO")); // Khóa sổ
             view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
         } else if (userType == 1) { // Teacher
             view.onThongBaoClick(e -> view.showPanel("THONGBAO"));

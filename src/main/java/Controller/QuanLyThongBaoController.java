@@ -226,42 +226,97 @@ public class QuanLyThongBaoController {
         t.setId(selected.getId()); // Use ID of main record
 
         // Check for changes (Title/Content)
-        boolean isChanged = !t.getTieude().equals(selected.getTieude()) ||
+        boolean contentChanged = !t.getTieude().equals(selected.getTieude()) ||
                 !t.getNoidung().equals(selected.getNoidung());
 
-        if (!isChanged) {
+        boolean scopeChanged = false;
+        ArrayList<String> newClasses = new ArrayList<>();
+
+        // Scope Check for Teacher
+        if (userType == 1) {
+            newClasses = adminView.getSelectedClasses();
+            // Parse old scope from "MH01, MH02" string
+            String oldScopeStr = selected.getPhamvi();
+            java.util.List<String> oldClasses = new ArrayList<>();
+            if (oldScopeStr != null && !oldScopeStr.isEmpty()) {
+                String[] parts = oldScopeStr.split(", ");
+                for (String p : parts)
+                    oldClasses.add(p);
+            }
+
+            // Compare lists (Sort to ensure order doesn't affect equality)
+            java.util.Collections.sort(newClasses);
+            java.util.Collections.sort(oldClasses);
+
+            scopeChanged = !newClasses.equals(oldClasses);
+        }
+
+        if (!contentChanged && !scopeChanged) {
             JOptionPane.showMessageDialog(adminView, "Chưa có dữ liệu nào được sửa!");
             return;
         }
 
-        // Critical: If Admin edits, take ownership?
+        // Handle User Identity for Update
         if (userType == 0) {
-            t.setNguoigui(currentUser); // Admin's username
-            t.setTenNguoiGui(realName); // Admin's Real Name
+            t.setNguoigui(currentUser);
+            t.setTenNguoiGui(realName);
         } else {
-            // Keep original sender if Owner edits their own
             t.setNguoigui(selected.getNguoigui());
             t.setTenNguoiGui(selected.getTenNguoiGui());
         }
 
         try {
-            // Use Batch Update if groupIds exists
-            if (selected.getGroupIds() != null && !selected.getGroupIds().isEmpty()) {
-                if (model.updateBatch(t, selected.getGroupIds())) {
-                    JOptionPane.showMessageDialog(adminView, "Cập nhật thành công!");
+            if (scopeChanged) {
+                // Critical: Scope changed means we must reshuffle the notification rows.
+                // 1. Soft Delete the old batch
+                if (selected.getGroupIds() != null && !selected.getGroupIds().isEmpty()) {
+                    model.deleteBatch(selected.getGroupIds());
                 } else {
-                    JOptionPane.showMessageDialog(adminView, "Cập nhật thất bại!");
+                    model.delete(selected.getId());
                 }
-            } else {
-                // Single update fallback
-                if (model.update(t)) {
-                    JOptionPane.showMessageDialog(adminView, "Cập nhật thành công!");
+
+                // 2. Add New records for the NEW scope
+                java.sql.Timestamp now = new java.sql.Timestamp(System.currentTimeMillis());
+                boolean allSuccess = true;
+
+                if (newClasses.isEmpty()) {
+                    JOptionPane.showMessageDialog(adminView, "Lỗi: Danh sách lớp trống!");
+                    return; // Should check this earlier?
+                }
+
+                for (String lop : newClasses) {
+                    t.setPhamvi(lop);
+                    if (!model.add(t, now))
+                        allSuccess = false;
+                }
+
+                if (allSuccess) {
+                    JOptionPane.showMessageDialog(adminView, "Cập nhật (thay đổi lớp) thành công!");
                 } else {
-                    JOptionPane.showMessageDialog(adminView, "Cập nhật thất bại!");
+                    JOptionPane.showMessageDialog(adminView, "Cập nhật có lỗi rải rác!");
+                }
+
+            } else {
+                // Scope NOT changed, just update Content via Batch
+                if (selected.getGroupIds() != null && !selected.getGroupIds().isEmpty()) {
+                    if (model.updateBatch(t, selected.getGroupIds())) {
+                        JOptionPane.showMessageDialog(adminView, "Cập nhật thành công!");
+                    } else {
+                        JOptionPane.showMessageDialog(adminView, "Cập nhật thất bại!");
+                    }
+                } else {
+                    // Single update fallback
+                    if (model.update(t)) {
+                        JOptionPane.showMessageDialog(adminView, "Cập nhật thành công!");
+                    } else {
+                        JOptionPane.showMessageDialog(adminView, "Cập nhật thất bại!");
+                    }
                 }
             }
+
             loadData();
             adminView.clearForm();
+
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(adminView, "Lỗi khi cập nhật: " + ex.getMessage());

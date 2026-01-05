@@ -58,6 +58,8 @@ public class ModernDiemPanel extends JPanel {
     private String currentUser;
     private int userType;
     private boolean isEditing = false;
+    private String globalNamHoc = "";
+    private int globalHocKy = 1;
 
     public ModernDiemPanel(String username, int userType) {
         this.currentUser = username;
@@ -73,9 +75,12 @@ public class ModernDiemPanel extends JPanel {
 
         // Initialize form components
         tfMaSV = createTextField();
+        tfMaSV = createTextField();
         tfMaMon = createTextField();
         cbHocKy = new JComboBox<>(new String[] { "1", "2", "3" });
+        cbHocKy.setEnabled(false); // Global locked
         tfNamHoc = createTextField();
+        tfNamHoc.setEditable(false); // Global locked
         tfDiemCC = createTextField();
         tfDiemGK = createTextField();
         tfDiemCK = createTextField();
@@ -155,10 +160,16 @@ public class ModernDiemPanel extends JPanel {
     }
 
     private void createTable() {
-        String[] columns = {
-                "Mã SV", "Mã Môn", "Học Kỳ", "Năm Học",
-                "ĐG Thường Xuyên", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
-        };
+        String[] columns;
+        if (userType == 2) { // Sinh viên
+            columns = new String[] {
+                    "Mã Môn", "ĐG Thường Xuyên", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
+            };
+        } else { // Giáo viên & Admin
+            columns = new String[] {
+                    "Mã SV", "Tên Sinh Viên", "ĐG Thường Xuyên", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
+            };
+        }
 
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -185,12 +196,14 @@ public class ModernDiemPanel extends JPanel {
         // Center align numeric columns
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        for (int i = 2; i < columns.length; i++) {
+
+        int startCenterIndex = (userType == 2) ? 1 : 2; // Student starts at 1, Teacher at 2
+        for (int i = startCenterIndex; i < columns.length; i++) {
             tblDiem.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
-        // Custom renderer for grade column
-        tblDiem.getColumnModel().getColumn(8).setCellRenderer(new GradeCellRenderer());
+        // Custom renderer for grade column (Last column)
+        tblDiem.getColumnModel().getColumn(columns.length - 1).setCellRenderer(new GradeCellRenderer());
     }
 
     private void setupLayout() {
@@ -287,10 +300,11 @@ public class ModernDiemPanel extends JPanel {
         }
 
         // Form fields
+        // Form fields - REORDERED: Year/Semester at TOP
+        formPanel.add(createFormField("Năm học:", tfNamHoc));
+        formPanel.add(createFormField("Học kỳ:", cbHocKy));
         formPanel.add(createFormField("Mã sinh viên:", tfMaSV));
         formPanel.add(createFormField("Mã môn học:", tfMaMon));
-        formPanel.add(createFormField("Học kỳ:", cbHocKy));
-        formPanel.add(createFormField("Năm học:", tfNamHoc));
         formPanel.add(createFormField("Điểm đánh giá thường xuyên:", tfDiemCC));
         formPanel.add(createFormField("Điểm giữa kỳ:", tfDiemGK));
         formPanel.add(createFormField("Điểm cuối kỳ:", tfDiemCK));
@@ -407,7 +421,7 @@ public class ModernDiemPanel extends JPanel {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             if (!isSelected) {
-                String grade = value.toString();
+                String grade = (value != null) ? value.toString() : "";
                 switch (grade) {
                     case "Xuất sắc":
                         c.setBackground(new Color(40, 167, 69, 50));
@@ -447,17 +461,30 @@ public class ModernDiemPanel extends JPanel {
     public void loadTableData(ArrayList<DiemModel> data) {
         tableModel.setRowCount(0);
         for (DiemModel diem : data) {
-            Object[] row = {
-                    diem.getMasv(),
-                    diem.getMamon(),
-                    diem.getHocky(),
-                    diem.getNamhoc(),
-                    String.format("%.1f", diem.getDiemcc()),
-                    String.format("%.1f", diem.getDiemgk()),
-                    String.format("%.1f", diem.getDiemck()),
-                    String.format("%.1f", diem.getDiemtongket()),
-                    getGradeClassification(diem.getDiemtongket())
-            };
+            Object[] row;
+            if (userType == 2) { // Student
+                // Columns: "Mã môn", "CC (10%)", "GK (30%)", "CK (60%)", "Tổng kết", "Xếp loại"
+                row = new Object[] {
+                        diem.getMamon(),
+                        String.format("%.1f", diem.getDiemcc()),
+                        String.format("%.1f", diem.getDiemgk()),
+                        String.format("%.1f", diem.getDiemck()),
+                        String.format("%.1f", diem.getDiemtongket()),
+                        getGradeClassification(diem.getDiemtongket())
+                };
+            } else { // Teacher / Admin
+                // Columns: "Mã SV", "Tên Sinh Viên", "CC (10%)", "GK (30%)", "CK (60%)", "Tổng
+                // kết", "Xếp loại"
+                row = new Object[] {
+                        diem.getMasv(),
+                        diem.getTenSV() != null ? diem.getTenSV() : "",
+                        String.format("%.1f", diem.getDiemcc()),
+                        String.format("%.1f", diem.getDiemgk()),
+                        String.format("%.1f", diem.getDiemck()),
+                        String.format("%.1f", diem.getDiemtongket()),
+                        getGradeClassification(diem.getDiemtongket())
+                };
+            }
             tableModel.addRow(row);
         }
     }
@@ -476,21 +503,53 @@ public class ModernDiemPanel extends JPanel {
     }
 
     public void fillForm(DiemModel diem) {
-        tfMaSV.setText(diem.getMasv());
-        tfMaMon.setText(diem.getMamon());
-        cbHocKy.setSelectedItem(String.valueOf(diem.getHocky()));
-        tfNamHoc.setText(diem.getNamhoc());
-        tfDiemCC.setText(String.valueOf(diem.getDiemcc()));
-        tfDiemGK.setText(String.valueOf(diem.getDiemgk()));
-        tfDiemCK.setText(String.valueOf(diem.getDiemck()));
-        tfDiemTK.setText(String.format("%.2f", diem.getDiemtongket()));
+        if (userType == 1) { // Teacher
+            // For teacher, these are set globally, but we can display them
+            cbHocKy.setSelectedItem(String.valueOf(diem.getHocky()));
+            tfNamHoc.setText(diem.getNamhoc());
+            // Map student specific fields
+            tfMaSV.setText(diem.getMasv());
+            tfMaMon.setText(diem.getMamon());
+
+            tfDiemCC.setText(String.valueOf(diem.getDiemcc()));
+            tfDiemGK.setText(String.valueOf(diem.getDiemgk()));
+            tfDiemCK.setText(String.valueOf(diem.getDiemck()));
+            tfDiemTK.setText(String.format("%.2f", diem.getDiemtongket()));
+        } else {
+            tfMaSV.setText(diem.getMasv());
+            tfMaMon.setText(diem.getMamon());
+            cbHocKy.setSelectedItem(String.valueOf(diem.getHocky()));
+            tfNamHoc.setText(diem.getNamhoc());
+            tfDiemCC.setText(String.valueOf(diem.getDiemcc()));
+            tfDiemGK.setText(String.valueOf(diem.getDiemgk()));
+            tfDiemCK.setText(String.valueOf(diem.getDiemck()));
+            tfDiemTK.setText(String.format("%.2f", diem.getDiemtongket()));
+        }
+    }
+
+    public void setGlobalSettings(String namhoc, int hocky) {
+        this.globalNamHoc = namhoc;
+        this.globalHocKy = hocky;
+        // Update fields if currently empty or just initialized
+        if (tfNamHoc.getText().isEmpty()) {
+            tfNamHoc.setText(namhoc);
+        }
+        // Force update regardless? probably yes.
+        tfNamHoc.setText(namhoc);
+        cbHocKy.setSelectedItem(String.valueOf(hocky));
+
+        // Disable them just in case
+        tfNamHoc.setEditable(false);
+        cbHocKy.setEnabled(false);
     }
 
     public void clearForm() {
         tfMaSV.setText("");
         tfMaMon.setText("");
-        cbHocKy.setSelectedIndex(0);
-        tfNamHoc.setText("");
+        // Reset to global settings
+        cbHocKy.setSelectedItem(String.valueOf(globalHocKy));
+        tfNamHoc.setText(globalNamHoc);
+
         tfDiemCC.setText("");
         tfDiemGK.setText("");
         tfDiemCK.setText("");
@@ -508,8 +567,18 @@ public class ModernDiemPanel extends JPanel {
         // Don't force uppercase - keep original format
         diem.setMasv(tfMaSV.getText().trim());
         diem.setMamon(tfMaMon.getText().trim());
-        diem.setHocky(Integer.parseInt(cbHocKy.getSelectedItem().toString()));
-        diem.setNamhoc(tfNamHoc.getText().trim());
+
+        // Handle values for Teacher
+        if (userType == 1) {
+            diem.setHocky(globalHocKy);
+            String nh = tfNamHoc.getText().trim();
+            if (nh.isEmpty())
+                nh = globalNamHoc;
+            diem.setNamhoc(nh);
+        } else {
+            diem.setHocky(Integer.parseInt(cbHocKy.getSelectedItem().toString()));
+            diem.setNamhoc(tfNamHoc.getText().trim());
+        }
 
         try {
             double cc = Double.parseDouble(tfDiemCC.getText().trim());
@@ -571,8 +640,10 @@ public class ModernDiemPanel extends JPanel {
         boolean canEdit = editing && userType != 2;
         tfMaSV.setEditable(canEdit);
         tfMaMon.setEditable(canEdit);
-        cbHocKy.setEnabled(canEdit);
-        tfNamHoc.setEditable(canEdit);
+        // cbHocKy & tfNamHoc are ALWAYS locked to global settings
+        cbHocKy.setEnabled(false);
+        tfNamHoc.setEditable(false);
+
         tfDiemCC.setEditable(canEdit);
         tfDiemGK.setEditable(canEdit);
         tfDiemCK.setEditable(canEdit);
@@ -729,12 +800,18 @@ public class ModernDiemPanel extends JPanel {
         String diemGK = tfDiemGK.getText().trim();
         String diemCK = tfDiemCK.getText().trim();
 
+        // Check global fallback for Teacher
+        if (userType == 1) {
+            if (namhoc.isEmpty())
+                namhoc = globalNamHoc;
+        }
+
         // Basic validation
         if (masv.isEmpty())
             return "Vui lòng nhập mã sinh viên";
         if (mamon.isEmpty())
             return "Vui lòng nhập mã môn học";
-        if (namhoc.isEmpty())
+        if (namhoc == null || namhoc.isEmpty())
             return "Vui lòng nhập năm học";
         if (diemCC.isEmpty())
             return "Vui lòng nhập điểm đánh giá thường xuyên";
@@ -771,7 +848,7 @@ public class ModernDiemPanel extends JPanel {
 
         // Validate academic year format
         if (!namhoc.matches("^\\d{4}-\\d{4}$")) {
-            return "Năm học không hợp lệ: '" + namhoc + "' (cần định dạng YYYY-YYYY, ví dụ: 2023-2024)";
+            return "Năm học không hợp lệ: '" + namhoc + "' (cần định dạng YYYY-YYYY, ví dụ: 2024-2025)";
         }
 
         return null; // All validations passed
