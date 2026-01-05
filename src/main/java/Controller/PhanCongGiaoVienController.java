@@ -105,12 +105,18 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
             return;
         }
 
+        // Validation: Check if exists
+        if (lopModel.checkGiaoVienQuanLyLop(magv, malop)) {
+            JOptionPane.showMessageDialog(view, "Phân công này đã tồn tại! Vui lòng kiểm tra lại.");
+            return;
+        }
+
         if (lopModel.themPhanCong(magv, malop)) {
             JOptionPane.showMessageDialog(view, "Thêm phân công thành công!");
             loadData();
         } else {
             JOptionPane.showMessageDialog(view,
-                    "Thêm phân công thất bại! Có thể giáo viên đã được phân công lớp này rồi.");
+                    "Thêm phân công thất bại!");
         }
     }
 
@@ -133,15 +139,21 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
             return;
         }
 
+        // Validation: Check if the NEW assignment already exists (conflict with others)
+        if (lopModel.checkGiaoVienQuanLyLop(newMagv, newMalop)) {
+            JOptionPane.showMessageDialog(view, "Phân công mới bị trùng với dữ liệu đã có!");
+            return;
+        }
+
         if (lopModel.updatePhanCong(selectedMagv, selectedMalop, newMagv, newMalop)) {
             JOptionPane.showMessageDialog(view, "Cập nhật phân công thành công!");
             loadData();
             // Reset selection tracking
             selectedMagv = null;
             selectedMalop = null;
-            view.clearForm(); // Assuming view has clearForm, or we just rely on table selection to refill
+            view.clearForm();
         } else {
-            JOptionPane.showMessageDialog(view, "Cập nhật thất bại! Có thể phân công mới bị trùng lặp.");
+            JOptionPane.showMessageDialog(view, "Cập nhật thất bại!");
         }
     }
 

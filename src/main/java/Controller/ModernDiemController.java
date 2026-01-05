@@ -659,7 +659,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
         if (diem.getNamhoc().isEmpty())
             return "Năm học không được để trống";
         if (diem.getDiemcc() < 0 || diem.getDiemcc() > 10)
-            return "Điểm chuyên cần phải từ 0-10";
+            return "Điểm đánh giá thường xuyên phải từ 0-10";
         if (diem.getDiemgk() < 0 || diem.getDiemgk() > 10)
             return "Điểm giữa kỳ phải từ 0-10";
         if (diem.getDiemck() < 0 || diem.getDiemck() > 10)

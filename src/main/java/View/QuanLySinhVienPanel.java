@@ -321,6 +321,10 @@ public class QuanLySinhVienPanel extends JPanel {
         return tfSearch.getText().trim();
     }
 
+    public void addSearchDocumentListener(javax.swing.event.DocumentListener l) {
+        tfSearch.getDocument().addDocumentListener(l);
+    }
+
     public void addTableMouseListener(MouseListener listener) {
         tblSinhVien.addMouseListener(listener);
     }

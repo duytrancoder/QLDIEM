@@ -74,6 +74,31 @@ public class ModernMainController {
             QuanLyGiaoVienPanel gvPanel = new QuanLyGiaoVienPanel();
             view.getMainContentPanel().add(gvPanel, "GIAOVIEN");
             gvController = new QuanLyGiaoVienController(gvPanel);
+
+            // Thông báo (Admin)
+            View.QuanLyThongBaoPanel tbPanel = new View.QuanLyThongBaoPanel(0); // 0=Admin
+            view.getMainContentPanel().add(tbPanel, "THONGBAO");
+            // Assuming "Admin" is the real name, or fetch it. For now detailed name
+            // fetching is complex, use username.
+            new Controller.QuanLyThongBaoController(tbPanel, username, 0, "Admin");
+
+        } else if (userType == 1) { // Teacher
+            // Thông báo (Teacher) -> Wrapper
+            View.QuanLyThongBaoPanel sendPanel = new View.QuanLyThongBaoPanel(1); // Manage
+            View.XemThongBaoPanel viewPanel = new View.XemThongBaoPanel(); // View Admin's
+            View.TeacherThongBaoWrapper wrapper = new View.TeacherThongBaoWrapper(sendPanel, viewPanel);
+
+            view.getMainContentPanel().add(wrapper, "THONGBAO");
+            String realName = fetchRealName(username, 1);
+
+            // Controller manages both
+            new Controller.QuanLyThongBaoController(wrapper, username, 1, realName);
+
+        } else if (userType == 2) { // Student
+            String studentClass = fetchStudentClass(username);
+            View.XemThongBaoPanel tbPanel = new View.XemThongBaoPanel();
+            view.getMainContentPanel().add(tbPanel, "THONGBAO");
+            new Controller.QuanLyThongBaoController(tbPanel, username, studentClass);
         }
     }
 
@@ -90,10 +115,53 @@ public class ModernMainController {
             view.onGiaoVienClick(e -> view.showPanel("GIAOVIEN")); // Quản lý giáo viên
             view.onLopClick(e -> view.showPanel("PHANCONG")); // Phân lớp
             view.onQuanLyLopClick(e -> view.showPanel("LOP")); // Quản lý lớp
+            view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
+        } else if (userType == 1) { // Teacher
+            view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
+        } else if (userType == 2) { // Student
+            view.onThongBaoClick(e -> view.showPanel("THONGBAO"));
         }
 
         // Logout handler
         view.onDangXuatClick(e -> handleLogout());
+    }
+
+    // Helper to get Real Name
+    private String fetchRealName(String username, int type) {
+        String query = "";
+        if (type == 1) { // Teacher
+            query = "SELECT hoten FROM tblgiaovien WHERE username = ?";
+        } else {
+            return "Admin"; // Default for admin
+        }
+
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, username);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getString("hoten");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return username; // Fallback
+    }
+
+    // Helper to get Student Class
+    private String fetchStudentClass(String username) {
+        String query = "SELECT malop FROM tblsinhvien WHERE masv = ?"; // Assuming masv == username
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, username);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getString("malop");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

@@ -157,7 +157,7 @@ public class ModernDiemPanel extends JPanel {
     private void createTable() {
         String[] columns = {
                 "Mã SV", "Mã Môn", "Học Kỳ", "Năm Học",
-                "Chuyên Cần", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
+                "ĐG Thường Xuyên", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
         };
 
         tableModel = new DefaultTableModel(columns, 0) {
@@ -291,7 +291,7 @@ public class ModernDiemPanel extends JPanel {
         formPanel.add(createFormField("Mã môn học:", tfMaMon));
         formPanel.add(createFormField("Học kỳ:", cbHocKy));
         formPanel.add(createFormField("Năm học:", tfNamHoc));
-        formPanel.add(createFormField("Điểm chuyên cần:", tfDiemCC));
+        formPanel.add(createFormField("Điểm đánh giá thường xuyên:", tfDiemCC));
         formPanel.add(createFormField("Điểm giữa kỳ:", tfDiemGK));
         formPanel.add(createFormField("Điểm cuối kỳ:", tfDiemCK));
         formPanel.add(createFormField("Điểm tổng kết:", tfDiemTK));
@@ -425,7 +425,7 @@ public class ModernDiemPanel extends JPanel {
                         c.setBackground(new Color(255, 108, 55, 50));
                         setForeground(new Color(255, 108, 55));
                         break;
-                    case "Yếu":
+                    case "Yếu (Kém)":
                         c.setBackground(new Color(220, 53, 69, 50));
                         setForeground(new Color(220, 53, 69));
                         break;
@@ -463,16 +463,16 @@ public class ModernDiemPanel extends JPanel {
     }
 
     private String getGradeClassification(double score) {
-        if (score >= 9.0)
+        if (score >= 9.0 && score <= 10.0)
             return "Xuất sắc";
-        else if (score >= 8.0)
+        else if (score >= 8.0 && score < 9.0)
             return "Giỏi";
-        else if (score >= 6.5)
+        else if (score >= 6.5 && score < 8.0)
             return "Khá";
-        else if (score >= 5.0)
+        else if (score >= 5.0 && score < 6.5)
             return "Trung bình";
         else
-            return "Yếu";
+            return "Yếu (Kém)";
     }
 
     public void fillForm(DiemModel diem) {
@@ -605,7 +605,7 @@ public class ModernDiemPanel extends JPanel {
             double gk = Double.parseDouble(tfDiemGK.getText().trim());
             double ck = Double.parseDouble(tfDiemCK.getText().trim());
 
-            double total = (cc * 0.1) + (gk * 0.3) + (ck * 0.6);
+            double total = (cc + (gk * 2) + (ck * 3)) / 6.0;
             tfDiemTK.setText(String.format("%.2f", total));
         } catch (NumberFormatException e) {
             tfDiemTK.setText("");
@@ -737,7 +737,7 @@ public class ModernDiemPanel extends JPanel {
         if (namhoc.isEmpty())
             return "Vui lòng nhập năm học";
         if (diemCC.isEmpty())
-            return "Vui lòng nhập điểm chuyên cần";
+            return "Vui lòng nhập điểm đánh giá thường xuyên";
         if (diemGK.isEmpty())
             return "Vui lòng nhập điểm giữa kỳ";
         if (diemCK.isEmpty())
@@ -750,7 +750,7 @@ public class ModernDiemPanel extends JPanel {
             double ck = Double.parseDouble(diemCK);
 
             if (cc < 0 || cc > 10)
-                return "Điểm chuyên cần phải từ 0-10";
+                return "Điểm đánh giá thường xuyên phải từ 0-10";
             if (gk < 0 || gk > 10)
                 return "Điểm giữa kỳ phải từ 0-10";
             if (ck < 0 || ck > 10)

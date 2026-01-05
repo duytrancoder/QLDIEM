@@ -457,7 +457,8 @@ public class SinhVienModel {
      */
     public ArrayList<SinhVienModel> searchSinhVien(String keyword) {
         ArrayList<SinhVienModel> list = new ArrayList<>();
-        String query = "SELECT * FROM tblsinhvien WHERE masv LIKE ? OR hoten LIKE ? ORDER BY masv";
+        // Use LOWER() for case-insensitive search
+        String query = "SELECT * FROM tblsinhvien WHERE LOWER(masv) LIKE LOWER(?) OR LOWER(hoten) LIKE LOWER(?) ORDER BY masv";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 

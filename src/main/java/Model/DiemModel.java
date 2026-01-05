@@ -15,9 +15,9 @@ import java.util.ArrayList;
 public class DiemModel {
 
     // Constants for grade calculation weights
-    private static final double WEIGHT_CC = 0.1;  // 10%
-    private static final double WEIGHT_GK = 0.3;  // 30%
-    private static final double WEIGHT_CK = 0.6;  // 60%
+    private static final double WEIGHT_CC = 0.1; // 10%
+    private static final double WEIGHT_GK = 0.3; // 30%
+    private static final double WEIGHT_CK = 0.6; // 60%
 
     private String masv;
     private String mamon;
@@ -31,7 +31,8 @@ public class DiemModel {
     public DiemModel() {
     }
 
-    public DiemModel( String masv, String mamon, int hocky, String namhoc, double diemcc, double diemgk, double diemck, double diemtongket) {
+    public DiemModel(String masv, String mamon, int hocky, String namhoc, double diemcc, double diemgk, double diemck,
+            double diemtongket) {
         this.masv = masv;
         this.mamon = mamon;
         this.hocky = hocky;
@@ -39,10 +40,8 @@ public class DiemModel {
         this.diemcc = diemcc;
         this.diemgk = diemgk;
         this.diemck = diemck;
-        this.diemtongket = diemtongket; 
+        this.diemtongket = diemtongket;
     }
-
-   
 
     public String getMasv() {
         return masv;
@@ -110,10 +109,11 @@ public class DiemModel {
 
     /**
      * Tính điểm tổng kết dựa trên công thức:
-     * Điểm tổng kết = (Điểm CC × 10%) + (Điểm GK × 30%) + (Điểm CK × 60%)
+     * Điểm trung bình môn = (Điểm đánh giá thường xuyên + 2* điểm giữa kỳ + 3* điểm
+     * cuối kỳ)/ 6
      */
     public double calculateDiemtongket() {
-        return (diemcc * WEIGHT_CC) + (diemgk * WEIGHT_GK) + (diemck * WEIGHT_CK);
+        return (diemcc + (diemgk * 2) + (diemck * 3)) / 6.0;
     }
 
     public String validate() {
@@ -134,7 +134,7 @@ public class DiemModel {
         }
 
         if (diemcc < 0 || diemcc > 10) {
-            return "Điểm chuyên cần phải từ 0 đến 10!";
+            return "Điểm đánh giá thường xuyên phải từ 0 đến 10!";
         }
 
         if (diemgk < 0 || diemgk > 10) {
@@ -168,7 +168,7 @@ public class DiemModel {
                         rs.getDouble("diemtongket") // Nếu DB ko lưu cột này thì bỏ qua
                 );
                 list.add(d);
-               
+
             }
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi lấy danh sách điểm: " + e.getMessage());
@@ -186,20 +186,19 @@ public class DiemModel {
         // Lấy masv từ username, sau đó lấy điểm theo masv
         String query = "SELECT d.* FROM tbldiem d JOIN tblsinhvien sv ON d.masv = sv.masv WHERE sv.username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
-                        rs.getString("masv"),
-                        rs.getString("mamon"),
-                        rs.getInt("hocky"),
-                        rs.getString("namhoc"),
-                        rs.getDouble("diemcc"),
-                        rs.getDouble("diemgk"),
-                        rs.getDouble("diemck"),
-                        rs.getDouble("diemtongket")
-                    );
+                            rs.getString("masv"),
+                            rs.getString("mamon"),
+                            rs.getInt("hocky"),
+                            rs.getString("namhoc"),
+                            rs.getDouble("diemcc"),
+                            rs.getDouble("diemgk"),
+                            rs.getDouble("diemck"),
+                            rs.getDouble("diemtongket"));
                     list.add(d);
                 }
             }
@@ -212,31 +211,30 @@ public class DiemModel {
         }
         return list;
     }
-    
+
     /**
      * Lấy điểm của sinh viên trong một lớp (cho giáo viên)
      */
     public ArrayList<DiemModel> getDiemByLop(String malop) {
         ArrayList<DiemModel> list = new ArrayList<>();
         String query = "SELECT d.* FROM tbldiem d " +
-                       "JOIN tblsinhvien sv ON d.masv = sv.masv " +
-                       "WHERE sv.malop = ?";
+                "JOIN tblsinhvien sv ON d.masv = sv.masv " +
+                "WHERE sv.malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, malop);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
-                        rs.getString("masv"),
-                        rs.getString("mamon"),
-                        rs.getInt("hocky"),
-                        rs.getString("namhoc"),
-                        rs.getDouble("diemcc"),
-                        rs.getDouble("diemgk"),
-                        rs.getDouble("diemck"),
-                        rs.getDouble("diemtongket")
-                    );
+                            rs.getString("masv"),
+                            rs.getString("mamon"),
+                            rs.getInt("hocky"),
+                            rs.getString("namhoc"),
+                            rs.getDouble("diemcc"),
+                            rs.getDouble("diemgk"),
+                            rs.getDouble("diemck"),
+                            rs.getDouble("diemtongket"));
                     list.add(d);
                 }
             }
@@ -249,32 +247,31 @@ public class DiemModel {
         }
         return list;
     }
-    
+
     /**
      * Lấy điểm của sinh viên trong một lớp theo môn học cụ thể (cho giáo viên)
      */
     public ArrayList<DiemModel> getDiemByLopAndMon(String malop, String mamon) {
         ArrayList<DiemModel> list = new ArrayList<>();
         String query = "SELECT d.* FROM tbldiem d " +
-                       "JOIN tblsinhvien sv ON d.masv = sv.masv " +
-                       "WHERE sv.malop = ? AND d.mamon = ?";
+                "JOIN tblsinhvien sv ON d.masv = sv.masv " +
+                "WHERE sv.malop = ? AND d.mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, malop);
             ps.setString(2, mamon);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
-                        rs.getString("masv"),
-                        rs.getString("mamon"),
-                        rs.getInt("hocky"),
-                        rs.getString("namhoc"),
-                        rs.getDouble("diemcc"),
-                        rs.getDouble("diemgk"),
-                        rs.getDouble("diemck"),
-                        rs.getDouble("diemtongket")
-                    );
+                            rs.getString("masv"),
+                            rs.getString("mamon"),
+                            rs.getInt("hocky"),
+                            rs.getString("namhoc"),
+                            rs.getDouble("diemcc"),
+                            rs.getDouble("diemgk"),
+                            rs.getDouble("diemck"),
+                            rs.getDouble("diemtongket"));
                     list.add(d);
                 }
             }
@@ -287,7 +284,7 @@ public class DiemModel {
         }
         return list;
     }
-    
+
     /**
      * Lấy điểm theo môn học của giáo viên (tất cả lớp)
      */
@@ -295,21 +292,20 @@ public class DiemModel {
         ArrayList<DiemModel> list = new ArrayList<>();
         String query = "SELECT * FROM tbldiem WHERE mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, mamon);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     DiemModel d = new DiemModel(
-                        rs.getString("masv"),
-                        rs.getString("mamon"),
-                        rs.getInt("hocky"),
-                        rs.getString("namhoc"),
-                        rs.getDouble("diemcc"),
-                        rs.getDouble("diemgk"),
-                        rs.getDouble("diemck"),
-                        rs.getDouble("diemtongket")
-                    );
+                            rs.getString("masv"),
+                            rs.getString("mamon"),
+                            rs.getInt("hocky"),
+                            rs.getString("namhoc"),
+                            rs.getDouble("diemcc"),
+                            rs.getDouble("diemgk"),
+                            rs.getDouble("diemck"),
+                            rs.getDouble("diemtongket"));
                     list.add(d);
                 }
             }
@@ -322,15 +318,15 @@ public class DiemModel {
         }
         return list;
     }
-    
+
     /**
      * Lấy mã sinh viên theo username
      */
     public String getMasvByUsername(String username) {
         String query = "SELECT masv FROM tblsinhvien WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -346,15 +342,15 @@ public class DiemModel {
         }
         return null;
     }
-    
+
     /**
      * Kiểm tra sinh viên có thuộc lớp không
      */
     public boolean checkSinhVienTrongLop(String masv, String malop) {
         String query = "SELECT COUNT(*) FROM tblsinhvien WHERE masv = ? AND malop = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             ps.setString(1, masv);
             ps.setString(2, malop);
             try (ResultSet rs = ps.executeQuery()) {
@@ -400,8 +396,7 @@ public class DiemModel {
 
         String query = "INSERT INTO tbldiem (masv, mamon, hocky, namhoc, diemcc, diemgk, diemck, diemtongket) VALUES (?,?,?,?,?,?,?,?)";
         try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(query))
-        {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, d.getMasv());
             ps.setString(2, d.getMamon());
             ps.setInt(3, d.getHocky());
@@ -444,8 +439,7 @@ public class DiemModel {
         String query = "UPDATE tbldiem SET diemcc=?, diemgk=?, diemck=?, diemtongket=?, namhoc=? WHERE masv=? AND mamon=? AND hocky=?";
         try (
                 Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(query))
-        {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setDouble(1, d.getDiemcc());
             ps.setDouble(2, d.getDiemgk());
             ps.setDouble(3, d.getDiemck());
@@ -470,8 +464,7 @@ public class DiemModel {
     public boolean deleteDiem(String masv, String mamon, int hocky) {
         String query = "DELETE FROM tbldiem WHERE masv=? AND mamon=? AND hocky=?";
         try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(query))
-        {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, masv);
             ps.setString(2, mamon);
             ps.setInt(3, hocky);
@@ -482,34 +475,33 @@ public class DiemModel {
         }
     }
 
-    public ArrayList<DiemModel> search(String keyword) { 
+    public ArrayList<DiemModel> search(String keyword) {
         ArrayList<DiemModel> list = new ArrayList<>();
         String query = "SELECT d.* FROM tbldiem d " +
-                       "JOIN tblsinhvien sv ON d.masv = sv.masv " +
-                       "JOIN tblmonhoc mh ON d.mamon = mh.mamon " +
-                       "WHERE d.masv LIKE ? OR sv.hoten LIKE ? OR d.mamon LIKE ? OR mh.tenmon LIKE ? OR d.namhoc LIKE ?";
-        
+                "JOIN tblsinhvien sv ON d.masv = sv.masv " +
+                "JOIN tblmonhoc mh ON d.mamon = mh.mamon " +
+                "WHERE d.masv LIKE ? OR sv.hoten LIKE ? OR d.mamon LIKE ? OR mh.tenmon LIKE ? OR d.namhoc LIKE ?";
+
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
             String searchPattern = "%" + keyword + "%";
             ps.setString(1, searchPattern); // Mã SV
-            ps.setString(2, searchPattern); // Tên SV  
+            ps.setString(2, searchPattern); // Tên SV
             ps.setString(3, searchPattern); // Mã môn
             ps.setString(4, searchPattern); // Tên môn
             ps.setString(5, searchPattern); // Năm học
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {                
+                while (rs.next()) {
                     DiemModel d = new DiemModel(
-                        rs.getString("masv"),
-                        rs.getString("mamon"),
-                        rs.getInt("hocky"),
-                        rs.getString("namhoc"),
-                        rs.getDouble("diemcc"),
-                        rs.getDouble("diemgk"),
-                        rs.getDouble("diemck"),
-                        rs.getDouble("diemtongket")
-                    );
+                            rs.getString("masv"),
+                            rs.getString("mamon"),
+                            rs.getInt("hocky"),
+                            rs.getString("namhoc"),
+                            rs.getDouble("diemcc"),
+                            rs.getDouble("diemgk"),
+                            rs.getDouble("diemck"),
+                            rs.getDouble("diemtongket"));
                     list.add(d);
                 }
             }
@@ -529,7 +521,7 @@ public class DiemModel {
     private boolean checkSinhVienExists(String masv) {
         String query = "SELECT COUNT(*) FROM tblsinhvien WHERE masv = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, masv);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -552,7 +544,7 @@ public class DiemModel {
     private boolean checkMonHocExists(String mamon) {
         String query = "SELECT COUNT(*) FROM tblmonhoc WHERE mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, mamon);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -570,34 +562,43 @@ public class DiemModel {
     }
 
     // --- Thống kê cho Dashboard ---
-    
+
     public int getDiemRecordCount() {
         String query = "SELECT COUNT(*) FROM tbldiem";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) { e.printStackTrace(); }
+                PreparedStatement ps = conn.prepareStatement(query);
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next())
+                return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
     public int getSubjectCount() {
         String query = "SELECT COUNT(*) FROM tblmonhoc";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) { e.printStackTrace(); }
+                PreparedStatement ps = conn.prepareStatement(query);
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next())
+                return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
     public double getSystemAverageScore() {
         String query = "SELECT AVG(diemtongket) FROM tbldiem";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return Math.round(rs.getDouble(1) * 100.0) / 100.0;
-        } catch (Exception e) { e.printStackTrace(); }
+                PreparedStatement ps = conn.prepareStatement(query);
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next())
+                return Math.round(rs.getDouble(1) * 100.0) / 100.0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0.0;
     }
 
@@ -605,93 +606,115 @@ public class DiemModel {
     public int getStudentSubjectCount(String masv) {
         String query = "SELECT COUNT(DISTINCT mamon) FROM tbldiem WHERE masv = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, masv);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
     public double getStudentAverageScore(String masv) {
         String query = "SELECT AVG(diemtongket) FROM tbldiem WHERE masv = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, masv);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Math.round(rs.getDouble(1) * 100.0) / 100.0;
+                if (rs.next())
+                    return Math.round(rs.getDouble(1) * 100.0) / 100.0;
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0.0;
     }
 
     public int getPassedCount(String masv) {
         String query = "SELECT COUNT(*) FROM tbldiem WHERE masv = ? AND diemtongket >= 4.0";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, masv);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
     public int getImprovementCount(String masv) {
         String query = "SELECT COUNT(*) FROM tbldiem WHERE masv = ? AND diemtongket < 4.0";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, masv);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
-    
+
     // Cho Giáo viên
     public int getGradedCountByTeacher(String magv) {
-        // Đếm số lượng điểm thuộc môn của giáo viên dạy, trong các lớp giáo viên quản lý (ước lượng)
+        // Đếm số lượng điểm thuộc môn của giáo viên dạy, trong các lớp giáo viên quản
+        // lý (ước lượng)
         // Hoặc đơn giản là đếm tất cả điểm của môn mà giáo viên này phụ trách
         String query = "SELECT COUNT(d.masv) FROM tbldiem d " +
-                       "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
-                       "WHERE gv.magv = ?";
+                "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
+                "WHERE gv.magv = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, magv);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
     public double getAverageScoreByTeacher(String magv) {
         String query = "SELECT AVG(d.diemtongket) FROM tbldiem d " +
-                       "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
-                       "WHERE gv.magv = ?";
+                "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
+                "WHERE gv.magv = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, magv);
             try (ResultSet rs = ps.executeQuery()) {
-                 if (rs.next()) return Math.round(rs.getDouble(1) * 100.0) / 100.0;
+                if (rs.next())
+                    return Math.round(rs.getDouble(1) * 100.0) / 100.0;
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0.0;
     }
-    
-     public int getGioiCountByTeacher(String magv) {
+
+    public int getGioiCountByTeacher(String magv) {
         String query = "SELECT COUNT(d.masv) FROM tbldiem d " +
-                       "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
-                       "WHERE gv.magv = ? AND d.diemtongket >= 8.0";
+                "JOIN tblgiaovien gv ON d.mamon = gv.mamon " +
+                "WHERE gv.magv = ? AND d.diemtongket >= 8.0";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+                PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, magv);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 

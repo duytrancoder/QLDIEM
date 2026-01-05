@@ -13,7 +13,7 @@ import java.util.ArrayList;
 /**
  * Controller cho quản lý sinh viên (Admin)
  */
-public class QuanLySinhVienController implements ActionListener, MouseListener {
+public class QuanLySinhVienController implements ActionListener, MouseListener, javax.swing.event.DocumentListener {
 
     private QuanLySinhVienPanel view;
     private SinhVienModel model;
@@ -27,6 +27,7 @@ public class QuanLySinhVienController implements ActionListener, MouseListener {
 
         view.addActionListener(this);
         view.addTableMouseListener(this);
+        view.addSearchDocumentListener(this);
 
         loadData();
         loadLop();
@@ -298,5 +299,32 @@ public class QuanLySinhVienController implements ActionListener, MouseListener {
     public void refreshAllData() {
         loadData(); // Reload student table
         loadLop(); // Reload class dropdown
+    }
+
+    @Override
+    public void insertUpdate(javax.swing.event.DocumentEvent e) {
+        handleLiveSearch();
+    }
+
+    @Override
+    public void removeUpdate(javax.swing.event.DocumentEvent e) {
+        handleLiveSearch();
+    }
+
+    @Override
+    public void changedUpdate(javax.swing.event.DocumentEvent e) {
+        handleLiveSearch();
+    }
+
+    private void handleLiveSearch() {
+        SwingUtilities.invokeLater(() -> {
+            String keyword = view.getSearchKeyword();
+            if (keyword.isEmpty()) {
+                loadData();
+            } else {
+                ArrayList<SinhVienModel> list = model.searchSinhVien(keyword);
+                view.loadTableData(list);
+            }
+        });
     }
 }

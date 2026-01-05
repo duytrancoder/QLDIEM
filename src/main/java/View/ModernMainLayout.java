@@ -35,6 +35,7 @@ public class ModernMainLayout extends JFrame {
     private ModernButton btnGiaoVien;
     private ModernButton btnLop;
     private ModernButton btnQuanLyLop; // Thêm button mới
+    private ModernButton btnThongBao; // Button Thong Bao
 
     private ModernButton btnMonHoc;
     private ModernButton btnBaoCao;
@@ -132,6 +133,7 @@ public class ModernMainLayout extends JFrame {
         btnGiaoVien = new ModernButton("Giáo viên", PRIMARY_COLOR);
         btnLop = new ModernButton("Phân lớp", PRIMARY_COLOR);
         btnQuanLyLop = new ModernButton("Quản lý Lớp", PRIMARY_COLOR); // Thêm button mới
+        btnThongBao = new ModernButton("Thông báo", PRIMARY_COLOR); // Thong bao
 
         btnMonHoc = new ModernButton("Môn học", PRIMARY_COLOR);
         btnBaoCao = new ModernButton("Báo cáo", SUCCESS_COLOR);
@@ -150,6 +152,8 @@ public class ModernMainLayout extends JFrame {
         menuPanel.add(btnLop);
         menuPanel.add(Box.createVerticalStrut(5));
         menuPanel.add(btnQuanLyLop); // Thêm button mới vào menu
+        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(btnThongBao);
         menuPanel.add(Box.createVerticalStrut(5));
 
         menuPanel.add(btnMonHoc);
@@ -419,6 +423,10 @@ public class ModernMainLayout extends JFrame {
         btnQuanLyLop.addActionListener(l);
     } // Thêm method mới
 
+    public void onThongBaoClick(ActionListener l) {
+        btnThongBao.addActionListener(l);
+    }
+
     public void onMonHocClick(ActionListener l) {
         btnMonHoc.addActionListener(l);
     }
@@ -468,6 +476,9 @@ public class ModernMainLayout extends JFrame {
             case "PHANCONG":
                 btnLop.setSelected(true);
                 break;
+            case "THONGBAO":
+                btnThongBao.setSelected(true);
+                break;
 
             case "MONHOC":
                 btnMonHoc.setSelected(true);
@@ -487,6 +498,8 @@ public class ModernMainLayout extends JFrame {
         btnSinhVien.setSelected(false);
         btnGiaoVien.setSelected(false);
         btnLop.setSelected(false);
-        btnQuanLyLop.setSelected(false); // Thêm reset cho button mới
+        btnLop.setSelected(false);
+        btnQuanLyLop.setSelected(false);
+        btnThongBao.setSelected(false); // Reset button moi
     }
 }
