@@ -91,7 +91,8 @@ public class ModernMainController {
             new Controller.QuanLyThongBaoController(tbPanel, username, 0, "Admin");
 
             // Khóa sổ & Niên khóa
-            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(this);
+            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel();
+            new Controller.KhoaSoNienKhoaController(khoaSoPanel, this);
             view.getMainContentPanel().add(khoaSoPanel, "KHOASO");
 
         } else if (userType == 1) { // Teacher
@@ -111,8 +112,9 @@ public class ModernMainController {
             view.getMainContentPanel().add(homeroomPanel, "HOMEROOM");
             new Controller.HomeroomClassController(homeroomPanel, username);
 
-            // Khóa sổ & Niên khóa (Read-Only for Teacher)
-            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(userType, this);
+            // Khóa sổ & Niên khóa (Read-Only)
+            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(userType);
+            new Controller.KhoaSoNienKhoaController(khoaSoPanel, this);
             view.getMainContentPanel().add(khoaSoPanel, "KHOASO");
 
         } else if (userType == 2) { // Student

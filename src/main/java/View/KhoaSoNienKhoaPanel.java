@@ -1,6 +1,5 @@
 package View;
 
-import Model.CauHinhModel;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -10,7 +9,6 @@ public class KhoaSoNienKhoaPanel extends JPanel {
     private JTextField tfNamHoc;
     private JComboBox<String> cbHocKy;
     private JButton btnLuu;
-    private Controller.ModernMainController mainController;
 
     // Colors
     private static final Color PRIMARY_COLOR = new Color(63, 81, 181);
@@ -22,18 +20,12 @@ public class KhoaSoNienKhoaPanel extends JPanel {
     private int userType = 0; // Default Admin
 
     public KhoaSoNienKhoaPanel() {
-        this(0, null);
+        this(0);
     }
 
-    public KhoaSoNienKhoaPanel(Controller.ModernMainController mainController) {
-        this(0, mainController);
-    }
-
-    public KhoaSoNienKhoaPanel(int userType, Controller.ModernMainController mainController) {
+    public KhoaSoNienKhoaPanel(int userType) {
         this.userType = userType;
-        this.mainController = mainController;
         initComponents();
-        loadCurrentSettings();
     }
 
     private void initComponents() {
@@ -118,43 +110,29 @@ public class KhoaSoNienKhoaPanel extends JPanel {
             btnLuu.setVisible(false);
             title.setText("Thông Tin Niên Khóa & Học Kỳ (Xem)");
         }
-
-        // Action Listener
-        btnLuu.addActionListener(e -> saveSettings());
     }
 
-    private void loadCurrentSettings() {
-        CauHinhModel model = new CauHinhModel().getGlobalSettings();
-        if (model != null) {
-            tfNamHoc.setText(model.getNamhoc());
-            cbHocKy.setSelectedItem(String.valueOf(model.getHocky()));
-        }
+    public void addSaveListener(java.awt.event.ActionListener listener) {
+        btnLuu.addActionListener(listener);
     }
 
-    private void saveSettings() {
-        String namHoc = tfNamHoc.getText().trim();
-        String hocKyStr = (String) cbHocKy.getSelectedItem();
+    public String getNamHoc() {
+        return tfNamHoc.getText().trim();
+    }
 
-        if (namHoc.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập năm học!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+    public void setNamHoc(String namHoc) {
+        tfNamHoc.setText(namHoc);
+    }
 
+    public int getHocKy() {
         try {
-            int hocKy = Integer.parseInt(hocKyStr);
-            boolean success = new CauHinhModel().updateSettings(namHoc, hocKy);
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Cập nhật cấu hình thành công!", "Thông báo",
-                        JOptionPane.INFORMATION_MESSAGE);
-                if (mainController != null) {
-                    mainController.refreshGlobalSettings();
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Cập nhật thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return Integer.parseInt((String) cbHocKy.getSelectedItem());
+        } catch (NumberFormatException e) {
+            return 1;
         }
+    }
+
+    public void setHocKy(int hocKy) {
+        cbHocKy.setSelectedItem(String.valueOf(hocKy));
     }
 }

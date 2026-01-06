@@ -13,9 +13,10 @@ public class SinhVienModel {
     private String gioitinh;
     private String diachi;
     private String malop;
+    private String tenLop; // New field for display (transient)
 
     public SinhVienModel(String username, String masv, String hoten, String ngaysinh, String gioitinh, String diachi,
-            String malop) {
+            String malop, String tenLop) {
         this.username = username;
         this.masv = masv;
         this.hoten = hoten;
@@ -23,6 +24,7 @@ public class SinhVienModel {
         this.gioitinh = gioitinh;
         this.diachi = diachi;
         this.malop = malop;
+        this.tenLop = tenLop;
     }
 
     public SinhVienModel() {
@@ -84,6 +86,14 @@ public class SinhVienModel {
         this.malop = malop;
     }
 
+    public String getTenLop() {
+        return tenLop;
+    }
+
+    public void setTenLop(String tenLop) {
+        this.tenLop = tenLop;
+    }
+
     public ArrayList<SinhVienModel> ds = new ArrayList<>();
 
     public SinhVienModel getData(String username) throws SQLException {
@@ -104,7 +114,8 @@ public class SinhVienModel {
                             rs.getString("ngaysinh"),
                             rs.getString("gioitinh"),
                             rs.getString("diachi"),
-                            rs.getString("malop"));
+                            rs.getString("malop"),
+                            null); // tenLop is null here
                 }
             }
         } catch (SQLException e) {
@@ -136,7 +147,8 @@ public class SinhVienModel {
                             rs.getString("ngaysinh"),
                             rs.getString("gioitinh"),
                             rs.getString("diachi"),
-                            rs.getString("malop"));
+                            rs.getString("malop"),
+                            null);
                 }
             }
         } catch (SQLException e) {
@@ -166,7 +178,8 @@ public class SinhVienModel {
                             rs.getString("ngaysinh"),
                             rs.getString("gioitinh"),
                             rs.getString("diachi"),
-                            rs.getString("malop"));
+                            rs.getString("malop"),
+                            null);
                     list.add(sv);
                 }
             }
@@ -183,9 +196,13 @@ public class SinhVienModel {
     /**
      * Lấy tất cả sinh viên
      */
+    /**
+     * Lấy tất cả sinh viên
+     */
     public ArrayList<SinhVienModel> getAllSinhVien() {
         ArrayList<SinhVienModel> list = new ArrayList<>();
-        String query = "SELECT * FROM tblsinhvien ORDER BY masv ASC";
+        // Use LEFT JOIN to get class name
+        String query = "SELECT sv.*, c.tenlop FROM tblsinhvien sv LEFT JOIN tblclass c ON sv.malop = c.malop ORDER BY sv.masv ASC";
         try (Connection conn = DatabaseConnection.getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query)) {
@@ -198,7 +215,8 @@ public class SinhVienModel {
                         rs.getString("ngaysinh"),
                         rs.getString("gioitinh"),
                         rs.getString("diachi"),
-                        rs.getString("malop"));
+                        rs.getString("malop"),
+                        rs.getString("tenlop")); // Get tenlop from join
                 list.add(sv);
             }
         } catch (SQLException e) {
@@ -487,10 +505,16 @@ public class SinhVienModel {
     /**
      * Tìm kiếm sinh viên theo từ khóa (Mã SV hoặc Họ tên)
      */
+    /**
+     * Tìm kiếm sinh viên theo từ khóa (Mã SV hoặc Họ tên)
+     */
     public ArrayList<SinhVienModel> searchSinhVien(String keyword) {
         ArrayList<SinhVienModel> list = new ArrayList<>();
-        // Use LOWER() for case-insensitive search
-        String query = "SELECT * FROM tblsinhvien WHERE LOWER(masv) LIKE LOWER(?) OR LOWER(hoten) LIKE LOWER(?) ORDER BY masv";
+        // Use LOWER() for case-insensitive search and JOIN for class name
+        String query = "SELECT sv.*, c.tenlop FROM tblsinhvien sv " +
+                "LEFT JOIN tblclass c ON sv.malop = c.malop " +
+                "WHERE LOWER(sv.masv) LIKE LOWER(?) OR LOWER(sv.hoten) LIKE LOWER(?) " +
+                "ORDER BY sv.masv";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 
@@ -507,7 +531,8 @@ public class SinhVienModel {
                             rs.getString("ngaysinh"),
                             rs.getString("gioitinh"),
                             rs.getString("diachi"),
-                            rs.getString("malop"));
+                            rs.getString("malop"),
+                            rs.getString("tenlop"));
                     list.add(sv);
                 }
             }

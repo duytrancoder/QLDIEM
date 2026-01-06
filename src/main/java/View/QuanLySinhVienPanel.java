@@ -55,8 +55,6 @@ public class QuanLySinhVienPanel extends JPanel {
         // Form fields
         tfMasv = createTextField();
         tfHoten = createTextField();
-        tfMasv = createTextField();
-        tfHoten = createTextField();
 
         // Initialize DatePicker with Vietnamese format
         DatePickerSettings dateSettings = new DatePickerSettings();
@@ -221,30 +219,10 @@ public class QuanLySinhVienPanel extends JPanel {
                     sv.getGioitinh(),
                     sv.getDiachi(),
                     sv.getMalop(), // Mã lớp
-                    getClassNameByCode(sv.getMalop()) // Tên lớp
+                    sv.getTenLop() // Tên lớp (loaded from Model via JOIN)
             };
             tableModel.addRow(row);
         }
-    }
-
-    // Helper method to get class name from class code
-    private String getClassNameByCode(String malop) {
-        if (malop == null || malop.isEmpty()) {
-            return "";
-        }
-        String query = "SELECT tenlop FROM tblclass WHERE malop = ?";
-        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
-                java.sql.PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, malop);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("tenlop");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
     }
 
     private String formatDate(String mysqldate) {

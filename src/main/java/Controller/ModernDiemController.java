@@ -186,6 +186,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 // Placeholder
                 DiemModel d = new DiemModel();
                 d.setMasv(sv.getMasv());
+                d.setTenSV(sv.getHoten()); // Fix: Populate student name
                 d.setMamon(selectedSubject);
                 // Use Global Settings
                 d.setHocky(globalHocKy);
