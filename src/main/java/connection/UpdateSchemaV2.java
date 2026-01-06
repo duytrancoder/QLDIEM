@@ -76,16 +76,23 @@ public class UpdateSchemaV2 {
                 }
 
                 if (!colExists) {
-                    try {
-                        stmt.execute("ALTER TABLE tblphancong DROP PRIMARY KEY");
-                    } catch (SQLException e) {
-                        // Ignore if no PK
-                    }
                     stmt.execute("ALTER TABLE tblphancong ADD COLUMN mamon VARCHAR(20) NOT NULL DEFAULT ''");
+                    System.out.println("SUCCESS: Added mamon to tblphancong.");
+                }
+
+                // Force PK upgrade to (magv, malop, mamon) if it's not already
+                try {
+                    // We must drop before adding if we want to change the columns in it
+                    stmt.execute("ALTER TABLE tblphancong DROP PRIMARY KEY");
+                } catch (SQLException e) {
+                    // No existing PK, ignore
+                }
+
+                try {
                     stmt.execute("ALTER TABLE tblphancong ADD PRIMARY KEY (magv, malop, mamon)");
-                    System.out.println("SUCCESS: Updated tblphancong schema (Added mamon + New PK).");
-                } else {
-                    System.out.println("INFO: tblphancong already has mamon.");
+                    System.out.println("SUCCESS: Enforced (magv, malop, mamon) PK on tblphancong.");
+                } catch (SQLException e) {
+                    System.out.println("INFO: PK already set or could not be updated: " + e.getMessage());
                 }
             } catch (SQLException e) {
                 System.out.println("ERROR tblphancong: " + e.getMessage());

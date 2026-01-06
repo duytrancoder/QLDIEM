@@ -31,7 +31,7 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
 
         view.getCbGiaoVien().addActionListener(e -> updateSubjectList());
 
-        loadLop();
+        refreshAll(); // Ensure data is loaded immediately
     }
 
     public void refreshAll() {
@@ -60,12 +60,14 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
 
                 if (codes != null && !codes.isEmpty()) {
                     String[] codeArr = codes.split(",");
-                    String[] nameArr = (names != null) ? names.split(",") : new String[0];
+                    String[] nameArr = (names != null) ? names.split(", ") : new String[0];
 
                     for (int i = 0; i < codeArr.length; i++) {
                         String code = codeArr[i].trim();
-                        String name = (i < nameArr.length) ? nameArr[i].trim() : "";
-                        subjects.add(code + " - " + name);
+                        String name = (i < nameArr.length) ? nameArr[i].trim() : "N/A";
+                        if (!code.isEmpty()) {
+                            subjects.add(code + " - " + name);
+                        }
                     }
                 }
             }
@@ -104,20 +106,6 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
             e.printStackTrace();
         }
 
-        // Update Table Model to have 5 columns first?
-        // View sets 4 columns. We need to update view or handle it here?
-        // Let's rely on view to provide model, we set row count 0 then addRow.
-        // DefaultTableModel defaults to column count initiated.
-        // We must update view Init to have 5 columns, or add one here.
-        if (view.getTable().getColumnCount() < 5) {
-            ((javax.swing.table.DefaultTableModel) view.getTable().getModel()).addColumn("Mã Môn"); // Add column
-                                                                                                    // dynamically if
-                                                                                                    // missing
-            // Hide it? Or show it?
-            // Ideally we shouldn't modify view structure here deeply but we need the data.
-            // We'll show it for now or rely on user ignoring it. The requirement didn't
-            // specify hiding.
-        }
         view.loadTableData(data);
     }
 

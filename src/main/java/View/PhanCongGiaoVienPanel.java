@@ -53,7 +53,7 @@ public class PhanCongGiaoVienPanel extends JPanel {
         btnLamMoi = createButton("Làm mới", Color.GRAY);
 
         // Table
-        String[] columns = { "Mã GV", "Tên Giáo viên", "Môn học", "Mã lớp" };
+        String[] columns = { "Mã GV", "Tên Giáo viên", "Môn học", "Mã lớp", "Mã Môn" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -234,9 +234,17 @@ public class PhanCongGiaoVienPanel extends JPanel {
             cbGiaoVien.setSelectedIndex(0);
         }
 
-        // Logic to match mamon will happen in controller after loading subjects,
-        // effectively handled by calling setSelectedIndex if controller matches items.
-        // We will overload or just assume controller manages the redraw of monhoc list.
+        if (mamon != null && !mamon.isEmpty()) {
+            for (int i = 0; i < cbMonHoc.getItemCount(); i++) {
+                String item = cbMonHoc.getItemAt(i);
+                if (item.startsWith(mamon + " - ")) {
+                    cbMonHoc.setSelectedIndex(i);
+                    break;
+                }
+            }
+        } else {
+            cbMonHoc.setSelectedIndex(0);
+        }
 
         if (malop != null && !malop.isEmpty()) {
             for (int i = 0; i < cbLop.getItemCount(); i++) {

@@ -175,11 +175,12 @@ public class GiaoVienModel {
      */
     public ArrayList<GiaoVienModel> fetchAllTeachers() {
         ArrayList<GiaoVienModel> list = new ArrayList<>();
-        // Query to get Teacher, Dept Name, and List of Subjects
+        // Query to get Teacher, Dept Name, and List of Subjects with combined format to
+        // guarantee alignment
         String query = "SELECT g.magv, g.hoten, g.gioitinh, g.ngaysinh, g.email, g.sdt, g.username, g.mabomon, " +
                 "b.tenbomon, " +
-                "GROUP_CONCAT(DISTINCT gd.mamon SEPARATOR ',') as cac_mon, " +
-                "GROUP_CONCAT(DISTINCT m.tenmon SEPARATOR ', ') as ten_cac_mon " +
+                "GROUP_CONCAT(DISTINCT CONCAT(gd.mamon, ':', IFNULL(m.tenmon, 'N/A')) SEPARATOR '|') as subjects_list "
+                +
                 "FROM tblgiaovien g " +
                 "LEFT JOIN tblbomon b ON g.mabomon = b.mabomon " +
                 "LEFT JOIN tbl_giangday gd ON g.magv = gd.magv " +
@@ -192,6 +193,25 @@ public class GiaoVienModel {
                 ResultSet rs = stmt.executeQuery(query)) {
 
             while (rs.next()) {
+                String fullSubjectStr = rs.getString("subjects_list");
+                String codes = "";
+                String names = "";
+
+                if (fullSubjectStr != null && !fullSubjectStr.isEmpty()) {
+                    String[] pairs = fullSubjectStr.split("\\|");
+                    ArrayList<String> codeList = new ArrayList<>();
+                    ArrayList<String> nameList = new ArrayList<>();
+                    for (String pair : pairs) {
+                        String[] parts = pair.split(":");
+                        if (parts.length >= 2) {
+                            codeList.add(parts[0].trim());
+                            nameList.add(parts[1].trim());
+                        }
+                    }
+                    codes = String.join(",", codeList);
+                    names = String.join(", ", nameList);
+                }
+
                 GiaoVienModel gv = new GiaoVienModel(
                         rs.getString("magv"),
                         rs.getString("hoten"),
@@ -201,8 +221,8 @@ public class GiaoVienModel {
                         rs.getString("sdt"),
                         rs.getString("mabomon"),
                         rs.getString("tenbomon"),
-                        rs.getString("cac_mon"), // CSV codes
-                        rs.getString("ten_cac_mon"), // CSV names
+                        codes, // Consolidated CSV codes
+                        names, // Consolidated CSV names
                         rs.getString("username"));
                 list.add(gv);
             }
@@ -454,8 +474,8 @@ public class GiaoVienModel {
     public GiaoVienModel getGiaoVienByMagv(String magv) {
         String query = "SELECT g.magv, g.hoten, g.gioitinh, g.ngaysinh, g.email, g.sdt, g.username, g.mabomon, " +
                 "b.tenbomon, " +
-                "GROUP_CONCAT(DISTINCT gd.mamon SEPARATOR ',') as cac_mon, " +
-                "GROUP_CONCAT(DISTINCT m.tenmon SEPARATOR ', ') as ten_cac_mon " +
+                "GROUP_CONCAT(DISTINCT CONCAT(gd.mamon, ':', IFNULL(m.tenmon, 'N/A')) SEPARATOR '|') as subjects_list "
+                +
                 "FROM tblgiaovien g " +
                 "LEFT JOIN tblbomon b ON g.mabomon = b.mabomon " +
                 "LEFT JOIN tbl_giangday gd ON g.magv = gd.magv " +
@@ -468,6 +488,25 @@ public class GiaoVienModel {
             ps.setString(1, magv);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    String fullSubjectStr = rs.getString("subjects_list");
+                    String codes = "";
+                    String names = "";
+
+                    if (fullSubjectStr != null && !fullSubjectStr.isEmpty()) {
+                        String[] pairs = fullSubjectStr.split("\\|");
+                        ArrayList<String> codeList = new ArrayList<>();
+                        ArrayList<String> nameList = new ArrayList<>();
+                        for (String pair : pairs) {
+                            String[] parts = pair.split(":");
+                            if (parts.length >= 2) {
+                                codeList.add(parts[0].trim());
+                                nameList.add(parts[1].trim());
+                            }
+                        }
+                        codes = String.join(",", codeList);
+                        names = String.join(", ", nameList);
+                    }
+
                     return new GiaoVienModel(
                             rs.getString("magv"),
                             rs.getString("hoten"),
@@ -477,8 +516,8 @@ public class GiaoVienModel {
                             rs.getString("sdt"),
                             rs.getString("mabomon"),
                             rs.getString("tenbomon"),
-                            rs.getString("cac_mon"),
-                            rs.getString("ten_cac_mon"),
+                            codes,
+                            names,
                             rs.getString("username"));
                 }
             }
@@ -520,8 +559,8 @@ public class GiaoVienModel {
         ArrayList<GiaoVienModel> list = new ArrayList<>();
         String query = "SELECT g.magv, g.hoten, g.gioitinh, g.ngaysinh, g.email, g.sdt, g.username, g.mabomon, " +
                 "b.tenbomon, " +
-                "GROUP_CONCAT(DISTINCT gd.mamon SEPARATOR ',') as cac_mon, " +
-                "GROUP_CONCAT(DISTINCT m.tenmon SEPARATOR ', ') as ten_cac_mon " +
+                "GROUP_CONCAT(DISTINCT CONCAT(gd.mamon, ':', IFNULL(m.tenmon, 'N/A')) SEPARATOR '|') as subjects_list "
+                +
                 "FROM tblgiaovien g " +
                 "LEFT JOIN tblbomon b ON g.mabomon = b.mabomon " +
                 "LEFT JOIN tbl_giangday gd ON g.magv = gd.magv " +
@@ -536,6 +575,25 @@ public class GiaoVienModel {
             ps.setString(2, pattern);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    String fullSubjectStr = rs.getString("subjects_list");
+                    String codes = "";
+                    String names = "";
+
+                    if (fullSubjectStr != null && !fullSubjectStr.isEmpty()) {
+                        String[] pairs = fullSubjectStr.split("\\|");
+                        ArrayList<String> codeList = new ArrayList<>();
+                        ArrayList<String> nameList = new ArrayList<>();
+                        for (String pair : pairs) {
+                            String[] parts = pair.split(":");
+                            if (parts.length >= 2) {
+                                codeList.add(parts[0].trim());
+                                nameList.add(parts[1].trim());
+                            }
+                        }
+                        codes = String.join(",", codeList);
+                        names = String.join(", ", nameList);
+                    }
+
                     list.add(new GiaoVienModel(
                             rs.getString("magv"),
                             rs.getString("hoten"),
@@ -545,8 +603,8 @@ public class GiaoVienModel {
                             rs.getString("sdt"),
                             rs.getString("mabomon"),
                             rs.getString("tenbomon"),
-                            rs.getString("cac_mon"),
-                            rs.getString("ten_cac_mon"),
+                            codes,
+                            names,
                             rs.getString("username")));
                 }
             }

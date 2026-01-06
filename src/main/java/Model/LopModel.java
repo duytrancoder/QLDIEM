@@ -274,9 +274,9 @@ public class LopModel {
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 
-            ps.setString(1, magv);
-            ps.setString(2, malop);
-            ps.setString(3, mamon);
+            ps.setString(1, (magv != null) ? magv.trim() : "");
+            ps.setString(2, (malop != null) ? malop.trim() : "");
+            ps.setString(3, (mamon != null) ? mamon.trim() : "");
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
@@ -457,9 +457,9 @@ public class LopModel {
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 
-            ps.setString(1, magv);
-            ps.setString(2, malop);
-            ps.setString(3, mamon);
+            ps.setString(1, (magv != null) ? magv.trim() : "");
+            ps.setString(2, (malop != null) ? malop.trim() : "");
+            ps.setString(3, (mamon != null) ? mamon.trim() : "");
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             if (e.getErrorCode() == 1062) {
@@ -484,9 +484,9 @@ public class LopModel {
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 
-            ps.setString(1, magv);
-            ps.setString(2, malop);
-            ps.setString(3, mamon);
+            ps.setString(1, (magv != null) ? magv.trim() : "");
+            ps.setString(2, (malop != null) ? malop.trim() : "");
+            ps.setString(3, (mamon != null) ? mamon.trim() : "");
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi xóa phân công: " + e.getMessage());
@@ -508,12 +508,12 @@ public class LopModel {
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
 
-            ps.setString(1, newMagv);
-            ps.setString(2, newMalop);
-            ps.setString(3, newMamon);
-            ps.setString(4, oldMagv);
-            ps.setString(5, oldMalop);
-            ps.setString(6, oldMamon);
+            ps.setString(1, (newMagv != null) ? newMagv.trim() : "");
+            ps.setString(2, (newMalop != null) ? newMalop.trim() : "");
+            ps.setString(3, (newMamon != null) ? newMamon.trim() : "");
+            ps.setString(4, (oldMagv != null) ? oldMagv.trim() : "");
+            ps.setString(5, (oldMalop != null) ? oldMalop.trim() : "");
+            ps.setString(6, (oldMamon != null) ? oldMamon.trim() : "");
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
