@@ -18,7 +18,14 @@ public class KhoaSoNienKhoaPanel extends JPanel {
     private static final Color CARD_COLOR = Color.WHITE;
     private static final Color TEXT_PRIMARY = new Color(33, 37, 41);
 
+    private int userType = 0; // Default Admin
+
     public KhoaSoNienKhoaPanel() {
+        this(0);
+    }
+
+    public KhoaSoNienKhoaPanel(int userType) {
+        this.userType = userType;
         initComponents();
         loadCurrentSettings();
     }
@@ -97,6 +104,14 @@ public class KhoaSoNienKhoaPanel extends JPanel {
         wrapper.setBackground(BACKGROUND_COLOR);
         wrapper.add(contentPanel);
         add(wrapper, BorderLayout.CENTER);
+
+        // Read-only logic for non-admins
+        if (userType != 0) {
+            tfNamHoc.setEditable(false);
+            cbHocKy.setEnabled(false);
+            btnLuu.setVisible(false);
+            title.setText("Thông Tin Niên Khóa & Học Kỳ (Xem)");
+        }
 
         // Action Listener
         btnLuu.addActionListener(e -> saveSettings());

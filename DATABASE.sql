@@ -124,8 +124,8 @@ CREATE TABLE `tbldiem` (
 CREATE TABLE `tblcauhinh` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `ten_truong` varchar(200) DEFAULT 'Trường Đại học Công Nghệ',
-  `nam_hoc_hien_tai` varchar(20) DEFAULT '2024-2025',
-  `hoc_ky_hien_tai` int DEFAULT 1
+  `namhoc` varchar(20) DEFAULT '2024-2025',
+  `hocky` int DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -200,7 +200,7 @@ INSERT INTO `tblsinhvien` (`masv`, `hoten`, `ngaysinh`, `malop`, `username`) VAL
 ('SV005', 'Vũ Đức Nam', '2004-09-25', 'L02', 'sv005');
 
 -- Bảng: tblcauhinh
-INSERT INTO `tblcauhinh` (`ten_truong`, `nam_hoc_hien_tai`, `hoc_ky_hien_tai`) VALUES
+INSERT INTO `tblcauhinh` (`ten_truong`, `namhoc`, `hocky`) VALUES
 ('Học viện Công Nghệ', '2024-2025', 1);
 
 -- ============================================

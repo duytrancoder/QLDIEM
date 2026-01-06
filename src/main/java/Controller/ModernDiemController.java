@@ -50,8 +50,12 @@ public class ModernDiemController implements ActionListener, MouseListener {
         if (ch != null) {
             this.globalNamHoc = ch.getNamhoc();
             this.globalHocKy = ch.getHocky();
-            view.setGlobalSettings(globalNamHoc, globalHocKy);
+        } else {
+            // Fallback to defaults if DB is empty or fails
+            this.globalNamHoc = "2024-2025";
+            this.globalHocKy = 1;
         }
+        view.setGlobalSettings(globalNamHoc, globalHocKy);
     }
 
     private void setupTeacherSubjectAndClass() {
@@ -265,23 +269,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
         currentDiem = null;
 
         // Pre-fill some fields for teacher
-        if (userType == 1) {
-            // Điền sẵn môn học của giáo viên
-            view.getSubjectField().setText(selectedSubject != null ? selectedSubject : "");
-
-            // Điền sẵn năm học hiện tại
-            java.util.Calendar cal = java.util.Calendar.getInstance();
-            int currentYear = cal.get(java.util.Calendar.YEAR);
-            int currentMonth = cal.get(java.util.Calendar.MONTH) + 1; // Calendar.MONTH is 0-based
-
-            String academicYear;
-            if (currentMonth >= 9) { // September onwards is new academic year
-                academicYear = currentYear + "-" + (currentYear + 1);
-            } else {
-                academicYear = (currentYear - 1) + "-" + currentYear;
-            }
-            view.getAcademicYearField().setText(academicYear);
-        }
+        view.getAcademicYearField().setText(globalNamHoc);
 
         showStatusMessage("Nhập thông tin điểm mới", MessageType.INFO);
     }
@@ -328,21 +316,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 diem.setHocky(globalHocKy);
             } else {
                 // Admin or others (Old logic fallback or broken)
-                // Since I cannot easily fix Admin mixed-view without adding columns back,
-                // I will apply the same mapping assuming Admin is viewing a filtered list or
-                // similar,
-                // BUT Admin view is likely "All Data".
-                // Creating a TODO or limited fix for Admin.
                 diem.setMasv(getSafeString(table, selectedRow, 0));
-                // Attempt to get other fields if they exist?
-                // Current Admin Table: MaSV, TenSV, CC, GK, CK, TK, XL.
-                // MISSING: MaMon, NamHoc, HocKy.
-                // This means Admin CANNOT identify the unique record to edit!
-                // I must fix ModernDiemPanel to include these columns for Admin,
-                // OR User instruction implies only Teacher view was broken.
-                // "2. Trang giáo viên ở phần quản lý điểm chưa hiển thị đúng..."
-                // I will fix for Teacher. Admin usage might be impacted but I stick to user
-                // request.
                 diem.setDiemcc(getSafeDouble(table, selectedRow, 2));
                 diem.setDiemgk(getSafeDouble(table, selectedRow, 3));
                 diem.setDiemck(getSafeDouble(table, selectedRow, 4));
@@ -374,13 +348,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
             return;
         }
 
-        // Disable delete for teacher if they are not supposed to modify structure
-        // Requirement didn't explicitly forbid delete, but if we auto-populate,
-        // deleting a row doesn't make sense
-        // as it will reappear on next refresh.
-        // Let's warn the teacher effectively or just allow it (it deletes key from DB,
-        // so next load -> placeholder).
-
         int confirm = JOptionPane.showConfirmDialog(
                 view,
                 "Bạn có chắc chắn muốn xóa điểm này?\n(Nếu xóa, sinh viên sẽ trở về trạng thái chưa có điểm)",
@@ -395,25 +362,16 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 int hocky;
 
                 if (userType == 2) {
-                    // Student
                     masv = model.getMasvByUsername(username);
                     mamon = getSafeString(view.getTable(), selectedRow, 0);
-                    hocky = globalHocKy; // Approximation or fetch?
+                    hocky = globalHocKy;
                 } else {
-                    // Teacher/Admin
                     masv = getSafeString(view.getTable(), selectedRow, 0);
                     mamon = selectedSubject;
                     hocky = globalHocKy;
-
-                    if (userType == 0) {
-                        // Admin needs to know MaMon/HocKy, but they are missing from table!
-                        // This indicates Admin delete is currently unsafe request.
-                        // I will skip Admin fix here unless requested.
-                    }
                 }
 
                 if (model.deleteDiem(masv, mamon, hocky)) {
-                    // Refresh data theo lớp đã chọn
                     if (userType == 1 && selectedLop != null) {
                         loadDiemForTeacher();
                     } else if (userType == 1) {
@@ -428,10 +386,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
                     view.clearForm();
                     showStatusMessage("Đã xóa điểm thành công", MessageType.SUCCESS);
                 } else {
-                    // Try to simulate success if it was a placeholder (not in DB)
-                    // If deleteDiem returns false, it might mean it wasn't there.
-                    // If it wasn't there, we just reload (it reappears as placeholder 0).
-                    // Effectively "Reset to 0".
                     loadDiemForTeacher();
                     showStatusMessage("Đã đặt lại điểm về 0", MessageType.SUCCESS);
                 }
@@ -445,7 +399,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
         try {
             DiemModel diem = view.getFormData();
 
-            // Kiểm tra quyền môn học cho giáo viên
             if (userType == 1) {
                 if (selectedSubject == null) {
                     showStatusMessage("Giáo viên chưa được phân công môn học", MessageType.WARNING);
@@ -457,7 +410,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 }
             }
 
-            // Kiểm tra quyền giáo viên: sinh viên phải thuộc lớp đã chọn
             if (userType == 1 && selectedLop != null) {
                 if (!model.checkSinhVienTrongLop(diem.getMasv(), selectedLop)) {
                     showStatusMessage("Lỗi: Sinh viên " + diem.getMasv() + " không thuộc lớp đã chọn!",
@@ -466,8 +418,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 }
             }
 
-            // Kiểm tra điểm đã tồn tại (cho chức năng thêm thuần túy - userType != 1 or
-            // isEditing=false)
             if (!isEditing && checkDiemExists(diem.getMasv(), diem.getMamon(), diem.getHocky())) {
                 showStatusMessage("Sinh viên đã có điểm môn này ở học kỳ " + diem.getHocky() + "!",
                         MessageType.WARNING);
@@ -478,24 +428,20 @@ public class ModernDiemController implements ActionListener, MouseListener {
             String message;
 
             if (isEditing) {
-                // Check if valid record exists (true update) or if it's a placeholder (insert)
                 boolean exists = checkDiemExists(diem.getMasv(), diem.getMamon(), diem.getHocky());
                 if (exists) {
                     success = model.updateDiem(diem);
                     message = success ? "Cập nhật điểm thành công" : "Cập nhật điểm thất bại";
                 } else {
-                    // Placeholder being saved for the first time
                     success = model.insertDiem(diem);
                     message = success ? "Nhập điểm thành công" : "Nhập điểm thất bại";
                 }
             } else {
-                // Insert new record (Admin or explicit Add)
                 success = model.insertDiem(diem);
                 message = success ? "Thêm điểm thành công" : "Thêm điểm thất bại";
             }
 
             if (success) {
-                // Refresh data theo lớp đã chọn
                 if (userType == 1 && selectedLop != null) {
                     loadDiemForTeacher();
                 } else if (userType == 1) {
@@ -513,8 +459,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 isEditing = false;
                 currentDiem = null;
                 showStatusMessage(message, MessageType.SUCCESS);
-
-                // Show success message in dialog as well
                 view.showSuccessMessage(message);
             } else {
                 showStatusMessage(message, MessageType.ERROR);
@@ -533,16 +477,14 @@ public class ModernDiemController implements ActionListener, MouseListener {
         view.clearForm();
         isEditing = false;
         currentDiem = null;
-
         showStatusMessage("Đã hủy thao tác", MessageType.INFO);
     }
 
     private void performSearch() {
         String keyword = view.getSearchKeyword();
         if (keyword.isEmpty()) {
-            // Reload dữ liệu gốc
             if (userType == 1) {
-                loadDiemForTeacher(); // Sử dụng method mới cho giáo viên
+                loadDiemForTeacher();
                 showStatusMessage("Đã làm mới dữ liệu", MessageType.INFO);
             } else if (userType == 2) {
                 ArrayList<DiemModel> data = model.getDiemByUsername(username);
@@ -554,27 +496,21 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 showStatusMessage("Đã làm mới dữ liệu", MessageType.INFO);
             }
         } else {
-            // Tìm kiếm
             ArrayList<DiemModel> kq = searchWithPermission(keyword);
             view.loadTableData(kq);
             showStatusMessage("Tìm thấy " + kq.size() + " kết quả cho '" + keyword + "'", MessageType.INFO);
         }
     }
 
-    /**
-     * Tìm kiếm với phân quyền
-     */
     private ArrayList<DiemModel> searchWithPermission(String keyword) {
         ArrayList<DiemModel> allResults = model.search(keyword);
         ArrayList<DiemModel> filteredResults = new ArrayList<>();
 
-        if (userType == 0) { // Admin - thấy tất cả
+        if (userType == 0) {
             return allResults;
-        } else if (userType == 1) { // Giáo viên - chỉ thấy môn của mình
+        } else if (userType == 1) {
             for (DiemModel diem : allResults) {
-                // Lọc theo môn học của giáo viên
                 if (selectedSubject != null && selectedSubject.equals(diem.getMamon())) {
-                    // Nếu đã chọn lớp thì lọc thêm theo lớp
                     if (selectedLop != null) {
                         if (model.checkSinhVienTrongLop(diem.getMasv(), selectedLop)) {
                             filteredResults.add(diem);
@@ -584,43 +520,31 @@ public class ModernDiemController implements ActionListener, MouseListener {
                     }
                 }
             }
-        } else if (userType == 2) { // Sinh viên - chỉ thấy điểm của mình
+        } else if (userType == 2) {
             for (DiemModel diem : allResults) {
                 if (isStudentGrade(diem.getMasv())) {
                     filteredResults.add(diem);
                 }
             }
         }
-
         return filteredResults;
     }
 
-    /**
-     * Kiểm tra điểm có thuộc sinh viên hiện tại không
-     */
     private boolean isStudentGrade(String masv) {
-        // Lấy mã sinh viên từ username
         String currentMasv = model.getMasvByUsername(username);
         return masv.equals(currentMasv);
     }
 
     private void handleExportExcel() {
-        // Get current filter information for filename
         String className = view.getSelectedLop();
         String subject = view.getSelectedMonHoc();
-
-        // Create descriptive filename
         String fileName = "BangDiem";
-        if (className != null && !className.isEmpty()) {
+        if (className != null && !className.isEmpty())
             fileName += "_" + className;
-        }
-        if (subject != null && !subject.isEmpty()) {
+        if (subject != null && !subject.isEmpty())
             fileName += "_" + subject;
-        }
-
         javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) view.getTable()
                 .getModel();
-
         ExcelExporter.exportToExcel(null, tableModel, "Bảng điểm", fileName);
     }
 
@@ -629,117 +553,64 @@ public class ModernDiemController implements ActionListener, MouseListener {
             showStatusMessage("Sinh viên không có quyền nhập dữ liệu", MessageType.WARNING);
             return;
         }
-
         showStatusMessage("Chức năng nhập Excel đang được phát triển", MessageType.INFO);
-        // TODO: Implement Excel import functionality
     }
 
     private void handleRefresh() {
         view.clearForm();
-        view.getTable().clearSelection(); // Deselect table row
-
-        // Disable fields until a row is selected again
-        if (userType == 1) {
+        view.getTable().clearSelection();
+        if (userType == 1)
             view.setScoreFieldsEditable(false);
-        }
-
         view.setEditingMode(false);
         isEditing = false;
         currentDiem = null;
-
-        // Refresh data theo phân quyền
         if (userType == 1) {
             loadDiemForTeacher();
-            if (selectedLop != null) {
-                showStatusMessage("Đã làm mới dữ liệu và đặt lại form", MessageType.INFO);
-            } else {
-                showStatusMessage("Đã làm mới dữ liệu và đặt lại form", MessageType.INFO);
-            }
         } else {
             loadInitialData();
-            showStatusMessage("Đã làm mới dữ liệu và đặt lại form", MessageType.INFO);
         }
+        showStatusMessage("Đã làm mới dữ liệu và đặt lại form", MessageType.INFO);
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 1) { // Single click
+        if (e.getClickCount() == 1) {
             int selectedRow = view.getTable().getSelectedRow();
             if (selectedRow >= 0) {
                 try {
-                    // Lấy dữ liệu từ bảng và fill vào form (Safe retrieval)
                     JTable table = view.getTable();
                     DiemModel diem = new DiemModel();
-
                     if (userType == 2) {
-                        // Student Columns: "Mã môn", "CC", "GK", "CK", "TK", "XL"
                         diem.setMamon(getSafeString(table, selectedRow, 0));
-                        diem.setMasv(model.getMasvByUsername(username)); // Self
+                        diem.setMasv(model.getMasvByUsername(username));
                         diem.setDiemcc(getSafeDouble(table, selectedRow, 1));
                         diem.setDiemgk(getSafeDouble(table, selectedRow, 2));
                         diem.setDiemck(getSafeDouble(table, selectedRow, 3));
                         diem.setDiemtongket(getSafeDouble(table, selectedRow, 4));
-                        // Year/Sem from DB based on record? Or global?
-                        // For student view, we might need to query or store hidden in model.
-                        // But student is read-only, so filling form is just for display.
-                        // We can try to fetch full object if needed, or just display what we have.
                     } else {
-                        // Teacher/Admin Columns: "Mã SV", "Tên SV", "CC", "GK", "CK", "TK", "XL"
                         diem.setMasv(getSafeString(table, selectedRow, 0));
-                        // Name at index 1 is ignored for DiemModel
                         diem.setDiemcc(getSafeDouble(table, selectedRow, 2));
                         diem.setDiemgk(getSafeDouble(table, selectedRow, 3));
                         diem.setDiemck(getSafeDouble(table, selectedRow, 4));
                         diem.setDiemtongket(getSafeDouble(table, selectedRow, 5));
-
-                        // Set context fields
-                        if (userType == 1) { // Teacher
+                        if (userType == 1)
                             diem.setMamon(selectedSubject);
-                        } else {
-                            // Admin view might need MaMon if it shows all?
-                            // Wait, Admin view loads ALL points, but table structure I defined in
-                            // ModernDiemPanel
-                            // for "Teacher / Admin" does NOT include MaMon/NamHoc/HocKy columns anymore!
-                            // This is a problem for Admin if they need to edit ANY subject.
-                            // Checking ModernDiemPanel.createTable...
-                            // It says: Columns: "Mã SV", "Tên Sinh Viên", "CC...", "GK...", "CK...",
-                            // "TK...", "XL"
-                            // If Admin view uses THIS table, they cannot see Subject/Year/Sem.
-                            // I should probably check if Admin needs those columns or if I should add them
-                            // back for Admin.
-                            // For now, let's assume Admin edits are rare or they use filtering.
-                            // But strictly speaking, if Admin edits, we need MaMon.
-                            // Let's assume for now we use the values from the form inputs if they were
-                            // preserved,
-                            // OR we need to fetch the full object from DB using MaSV?
-                            // Actually, if table doesn't have it, we can't get it easily without a lookup.
-                            // ERROR: Admin view seems broken by this column change if it displays ALL
-                            // subjects mixed.
-                            // But user complaint was about TEACHER view. Let's fix TEACHER first.
+                        else
                             diem.setMamon(selectedSubject != null ? selectedSubject : "");
-                        }
                         diem.setNamhoc(globalNamHoc);
                         diem.setHocky(globalHocKy);
                     }
-
                     view.fillForm(diem);
                     currentDiem = diem;
-
-                    // Enable editing for teachers when a row is selected
-                    if (userType == 1) {
+                    if (userType == 1)
                         view.setScoreFieldsEditable(true);
-                        // Silent for teacher
-                    } else {
+                    else
                         showStatusMessage("Đã chọn điểm của sinh viên " + diem.getMasv(), MessageType.INFO);
-                    }
-
                 } catch (Exception ex) {
                     showStatusMessage("Lỗi khi hiển thị thông tin: " + ex.getMessage(), MessageType.ERROR);
-                    ex.printStackTrace();
                 }
             }
-        } else if (e.getClickCount() == 2 && userType != 2 && userType != 1) { // Double click for edit (Exclude
-                                                                               // Teacher)
+        } else if (e.getClickCount() == 2 && userType != 2 && userType != 1) {
             handleEdit();
         }
     }
@@ -749,19 +620,9 @@ public class ModernDiemController implements ActionListener, MouseListener {
         return val != null ? val.toString() : "";
     }
 
-    private int getSafeInt(JTable table, int row, int col) {
-        Object val = table.getValueAt(row, col);
-        try {
-            return val != null ? Integer.parseInt(val.toString()) : 0;
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
     private double getSafeDouble(JTable table, int row, int col) {
         Object val = table.getValueAt(row, col);
         try {
-            // Replace comma with dot if locale issues
             return val != null ? Double.parseDouble(val.toString().replace(",", ".")) : 0.0;
         } catch (NumberFormatException e) {
             return 0.0;
@@ -784,8 +645,6 @@ public class ModernDiemController implements ActionListener, MouseListener {
     public void mouseExited(MouseEvent e) {
     }
 
-    // Helper methods
-
     private String validateDiem(DiemModel diem) {
         if (diem.getMasv().isEmpty())
             return "Mã sinh viên không được để trống";
@@ -794,68 +653,39 @@ public class ModernDiemController implements ActionListener, MouseListener {
         if (diem.getNamhoc().isEmpty())
             return "Năm học không được để trống";
         if (diem.getDiemcc() < 0 || diem.getDiemcc() > 10)
-            return "Điểm đánh giá thường xuyên phải từ 0-10";
+            return "Điểm CC phải từ 0-10";
         if (diem.getDiemgk() < 0 || diem.getDiemgk() > 10)
-            return "Điểm giữa kỳ phải từ 0-10";
+            return "Điểm GK phải từ 0-10";
         if (diem.getDiemck() < 0 || diem.getDiemck() > 10)
-            return "Điểm cuối kỳ phải từ 0-10";
-
+            return "Điểm CK phải từ 0-10";
         return null;
     }
 
-    // Status message system
     enum MessageType {
         SUCCESS, ERROR, WARNING, INFO
     }
 
     private void showStatusMessage(String message, MessageType type) {
         SwingUtilities.invokeLater(() -> {
-            // For now, just print to console
-            // In a real implementation, this would show in a status bar or notification
-            String prefix;
-            switch (type) {
-                case SUCCESS:
-                    prefix = "[OK] ";
-                    break;
-                case ERROR:
-                    prefix = "[LỖI] ";
-                    break;
-                case WARNING:
-                    prefix = "[CẢNH BÁO] ";
-                    break;
-                case INFO:
-                default:
-                    prefix = "[INFO] ";
-                    break;
-            }
+            String prefix = switch (type) {
+                case SUCCESS -> "[OK] ";
+                case ERROR -> "[LỖI] ";
+                case WARNING -> "[CẢNH BÁO] ";
+                case INFO -> "[INFO] ";
+            };
             System.out.println(prefix + message);
-
-            // For critical errors, show dialog
             if (type == MessageType.ERROR) {
                 JOptionPane.showMessageDialog(view, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
     }
 
-    /**
-     * Kiểm tra điểm đã tồn tại hay chưa
-     */
     private boolean checkDiemExists(String masv, String mamon, int hocky) {
         try {
-            ArrayList<DiemModel> allDiem;
-            if (userType == 1) {
-                // Giáo viên chỉ kiểm tra trong phạm vi môn của mình
-                allDiem = model.getDiemByMon(selectedSubject);
-            } else {
-                allDiem = model.getAllDiem();
-            }
-
+            ArrayList<DiemModel> allDiem = (userType == 1) ? model.getDiemByMon(selectedSubject) : model.getAllDiem();
             for (DiemModel diem : allDiem) {
-                if (diem.getMasv().equals(masv) &&
-                        diem.getMamon().equals(mamon) &&
-                        diem.getHocky() == hocky) {
+                if (diem.getMasv().equals(masv) && diem.getMamon().equals(mamon) && diem.getHocky() == hocky)
                     return true;
-                }
             }
         } catch (Exception e) {
             e.printStackTrace();

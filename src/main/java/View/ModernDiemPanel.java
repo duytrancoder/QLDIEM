@@ -539,10 +539,12 @@ public class ModernDiemPanel extends JPanel {
         if (userType == 1) { // Teacher
             // For teacher, these are set globally, but we can display them
             cbHocKy.setSelectedItem(String.valueOf(diem.getHocky()));
-            tfNamHoc.setText(diem.getNamhoc());
-            // Map student specific fields
             tfMaSV.setText(diem.getMasv());
             tfMaMon.setText(diem.getMamon());
+
+            // Teachers: Always force global settings in form
+            tfNamHoc.setText(globalNamHoc);
+            cbHocKy.setSelectedItem(String.valueOf(globalHocKy));
 
             tfDiemCC.setText(String.valueOf(diem.getDiemcc()));
             tfDiemGK.setText(String.valueOf(diem.getDiemgk()));
@@ -564,10 +566,7 @@ public class ModernDiemPanel extends JPanel {
         this.globalNamHoc = namhoc;
         this.globalHocKy = hocky;
         // Update fields if currently empty or just initialized
-        if (tfNamHoc.getText().isEmpty()) {
-            tfNamHoc.setText(namhoc);
-        }
-        // Force update regardless? probably yes.
+        // Force update!
         tfNamHoc.setText(namhoc);
         cbHocKy.setSelectedItem(String.valueOf(hocky));
 
@@ -601,13 +600,13 @@ public class ModernDiemPanel extends JPanel {
         diem.setMasv(tfMaSV.getText().trim());
         diem.setMamon(tfMaMon.getText().trim());
 
-        // Handle values for Teacher
-        if (userType == 1) {
+        // Handle values for non-admins (Teacher/Student)
+        if (userType == 1 || userType == 2) {
             diem.setHocky(globalHocKy);
-            String nh = tfNamHoc.getText().trim();
-            if (nh.isEmpty())
-                nh = globalNamHoc;
-            diem.setNamhoc(nh);
+            diem.setNamhoc(globalNamHoc);
+            // Ensure UI reflects this too
+            tfNamHoc.setText(globalNamHoc);
+            cbHocKy.setSelectedItem(String.valueOf(globalHocKy));
         } else {
             diem.setHocky(Integer.parseInt(cbHocKy.getSelectedItem().toString()));
             diem.setNamhoc(tfNamHoc.getText().trim());
@@ -875,10 +874,12 @@ public class ModernDiemPanel extends JPanel {
         String diemGK = tfDiemGK.getText().trim();
         String diemCK = tfDiemCK.getText().trim();
 
-        // Check global fallback for Teacher
-        if (userType == 1) {
-            if (namhoc.isEmpty())
+        if (userType == 1 || userType == 2) {
+            // Force global fallback for non-admins
+            if (namhoc.isEmpty() || !namhoc.equals(globalNamHoc)) {
                 namhoc = globalNamHoc;
+                tfNamHoc.setText(globalNamHoc);
+            }
         }
 
         // Basic validation

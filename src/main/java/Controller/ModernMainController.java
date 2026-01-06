@@ -120,6 +120,10 @@ public class ModernMainController {
             view.getMainContentPanel().add(homeroomPanel, "HOMEROOM");
             new Controller.HomeroomClassController(homeroomPanel, username);
 
+            // Khóa sổ & Niên khóa (Read-Only for Teacher)
+            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(userType);
+            view.getMainContentPanel().add(khoaSoPanel, "KHOASO");
+
         } else if (userType == 2) { // Student
             String studentClass = fetchStudentClass(username);
             View.XemThongBaoPanel tbPanel = new View.XemThongBaoPanel();
