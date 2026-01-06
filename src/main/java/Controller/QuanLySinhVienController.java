@@ -3,6 +3,7 @@ package Controller;
 import Model.SinhVienModel;
 import Model.LopModel;
 import View.QuanLySinhVienPanel;
+import utils.ExcelExporter;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -66,6 +67,9 @@ public class QuanLySinhVienController implements ActionListener, MouseListener, 
                 break;
             case "Tìm":
                 handleTimKiem();
+                break;
+            case "Xuất Excel":
+                handleExportExcel();
                 break;
         }
     }
@@ -240,31 +244,34 @@ public class QuanLySinhVienController implements ActionListener, MouseListener, 
         currentSV = null;
     }
 
+    private void handleExportExcel() {
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) view.getTable()
+                .getModel();
+        ExcelExporter.exportToExcel(null, tableModel, "Danh sách Sinh viên", "DanhSachSinhVien");
+    }
+
     @Override
     public void mouseClicked(MouseEvent e) {
         int row = view.getTable().getSelectedRow();
         if (row >= 0) {
             try {
-                // Lấy dữ liệu từ bảng và fill vào form
+                // Get student ID from table
                 JTable table = view.getTable();
-                SinhVienModel sv = new SinhVienModel();
+                String masv = table.getValueAt(row, 0).toString();
 
-                sv.setMasv(table.getValueAt(row, 0).toString());
-                sv.setHoten(table.getValueAt(row, 1).toString());
-                sv.setNgaysinh(table.getValueAt(row, 2).toString());
-                sv.setGioitinh(table.getValueAt(row, 3).toString());
-                sv.setDiachi(table.getValueAt(row, 4).toString());
-                sv.setMalop(table.getValueAt(row, 5).toString());
+                // Fetch complete data from database (with yyyy-MM-dd format)
+                SinhVienModel sv = model.getSinhVienByMasv(masv);
 
-                // Set default username from ID
-                sv.setUsername(sv.getMasv());
-
-                view.fillForm(sv);
-                currentSV = sv;
-
-                System.out.println("Selected student: " + sv.getHoten() + " (" + sv.getMasv() + ")");
+                if (sv != null) {
+                    view.fillForm(sv);
+                    currentSV = sv;
+                    System.out.println("Selected student: " + sv.getHoten() + " (" + sv.getMasv() + "), Birth: "
+                            + sv.getNgaysinh());
+                } else {
+                    System.err.println("Could not find student with ID: " + masv);
+                }
             } catch (Exception ex) {
-                System.err.println("Lỗi khi fill form: " + ex.getMessage());
+                System.err.println("Error filling form: " + ex.getMessage());
                 ex.printStackTrace();
             }
         }

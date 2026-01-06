@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Panel quản lý sinh viên cho Admin (thêm sinh viên vào lớp)
@@ -42,6 +41,7 @@ public class QuanLySinhVienPanel extends JPanel {
     private JButton btnSua;
     private JButton btnXoa;
     private JButton btnLamMoi;
+    private JButton btnExport;
 
     public QuanLySinhVienPanel() {
         initComponents();
@@ -81,6 +81,7 @@ public class QuanLySinhVienPanel extends JPanel {
         btnSua = createButton("Sửa", PRIMARY_COLOR);
         btnXoa = createButton("Xóa", DANGER_COLOR);
         btnLamMoi = createButton("Làm mới", Color.GRAY);
+        btnExport = createButton("Xuất Excel", SUCCESS_COLOR);
 
         // Table
         String[] columns = { "Mã SV", "Họ tên", "Ngày sinh", "Giới tính", "Địa chỉ", "Lớp" };
@@ -163,13 +164,14 @@ public class QuanLySinhVienPanel extends JPanel {
         formPanel.add(createFormField("Lớp:", cbLop));
 
         formPanel.add(Box.createVerticalStrut(20));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setBackground(CARD_COLOR);
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        buttonPanel.setBackground(BACKGROUND_COLOR);
         buttonPanel.add(btnThem);
         buttonPanel.add(btnSua);
         buttonPanel.add(btnXoa);
         buttonPanel.add(btnLamMoi);
+        buttonPanel.add(btnExport);
 
         formPanel.add(buttonPanel);
 
@@ -316,6 +318,7 @@ public class QuanLySinhVienPanel extends JPanel {
         btnXoa.addActionListener(listener);
         btnLamMoi.addActionListener(listener);
         btnTimKiem.addActionListener(listener);
+        btnExport.addActionListener(listener);
     }
 
     public String getSearchKeyword() {

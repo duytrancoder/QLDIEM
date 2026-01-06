@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 public class QuanLyGiaoVienPanel extends JPanel {
 

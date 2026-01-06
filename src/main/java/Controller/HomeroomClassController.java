@@ -4,6 +4,7 @@ import Model.DiemModel;
 import Model.LopModel;
 import Model.SinhVienModel;
 import View.HomeroomClassPanel;
+import utils.ExcelExporter;
 import javax.swing.JOptionPane;
 import java.util.ArrayList;
 
@@ -67,18 +68,26 @@ public class HomeroomClassController {
             }
         });
 
-        // Refresh button
-        view.getBtnRefresh().addActionListener(e -> {
-            if (selectedSubject != null) {
-                loadGrades();
-                JOptionPane.showMessageDialog(view, "Đã làm mới dữ liệu!");
-            }
-        });
-
         // Export button
         view.getBtnExport().addActionListener(e -> {
-            JOptionPane.showMessageDialog(view, "Chức năng xuất Excel đang phát triển!");
+            handleExportExcel();
         });
+    }
+
+    private void handleExportExcel() {
+        // Create descriptive filename with class and subject
+        String fileName = "BangDiemLopChuNhiem";
+        if (homeroomClass != null) {
+            fileName += "_" + homeroomClass;
+        }
+        if (selectedSubject != null) {
+            fileName += "_" + selectedSubject;
+        }
+
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) view.getTable()
+                .getModel();
+
+        ExcelExporter.exportToExcel(null, tableModel, "Bảng điểm lớp chủ nhiệm", fileName);
     }
 
     private void loadGrades() {

@@ -116,6 +116,38 @@ public class SinhVienModel {
     }
 
     /**
+     * Get student by student ID (masv)
+     */
+    public SinhVienModel getSinhVienByMasv(String masv) {
+        SinhVienModel sv = null;
+        String query = "SELECT * FROM tblsinhvien WHERE masv = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, masv);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    sv = new SinhVienModel(
+                            rs.getString("username"),
+                            rs.getString("masv"),
+                            rs.getString("hoten"),
+                            rs.getString("ngaysinh"),
+                            rs.getString("gioitinh"),
+                            rs.getString("diachi"),
+                            rs.getString("malop"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting student by masv: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return sv;
+    }
+
+    /**
      * Lấy danh sách sinh viên trong một lớp
      */
     public ArrayList<SinhVienModel> getSinhVienByLop(String malop) {

@@ -2,15 +2,11 @@ package Controller;
 
 import Model.DiemModel;
 import Model.LopModel;
-import Model.CauHinhModel; // Import
+import Model.CauHinhModel;
 import View.ModernDiemPanel;
+import utils.ExcelExporter;
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -228,11 +224,8 @@ public class ModernDiemController implements ActionListener, MouseListener {
                 case "Tìm":
                     performSearch();
                     break;
-                case "📤 Xuất Excel":
-                    handleExport();
-                    break;
-                case "📥 Nhập Excel":
-                    handleImport();
+                case "Xuất Excel":
+                    handleExportExcel();
                     break;
                 case "Làm mới":
                     handleRefresh();
@@ -608,12 +601,27 @@ public class ModernDiemController implements ActionListener, MouseListener {
         return masv.equals(currentMasv);
     }
 
-    private void handleExport() {
-        showStatusMessage("Chức năng xuất Excel đang được phát triển", MessageType.INFO);
-        // TODO: Implement Excel export functionality
+    private void handleExportExcel() {
+        // Get current filter information for filename
+        String className = view.getSelectedLop();
+        String subject = view.getSelectedMonHoc();
+
+        // Create descriptive filename
+        String fileName = "BangDiem";
+        if (className != null && !className.isEmpty()) {
+            fileName += "_" + className;
+        }
+        if (subject != null && !subject.isEmpty()) {
+            fileName += "_" + subject;
+        }
+
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) view.getTable()
+                .getModel();
+
+        ExcelExporter.exportToExcel(null, tableModel, "Bảng điểm", fileName);
     }
 
-    private void handleImport() {
+    private void handleImportExcel() {
         if (userType == 2) {
             showStatusMessage("Sinh viên không có quyền nhập dữ liệu", MessageType.WARNING);
             return;

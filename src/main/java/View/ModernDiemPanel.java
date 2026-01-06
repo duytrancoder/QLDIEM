@@ -54,7 +54,6 @@ public class ModernDiemPanel extends JPanel {
     private JButton btnHuy;
     private JButton btnSearch;
     private JButton btnExport;
-    private JButton btnImport;
     private JButton btnRefresh;
 
     private String currentUser;
@@ -106,7 +105,6 @@ public class ModernDiemPanel extends JPanel {
         btnHuy = createButton("Hủy", TEXT_SECONDARY);
         btnSearch = createButton("Tìm", PRIMARY_COLOR);
         btnExport = createButton("Xuất Excel", SUCCESS_COLOR);
-        btnImport = createButton("Nhập Excel", PRIMARY_COLOR);
         btnRefresh = createButton("Làm mới", TEXT_SECONDARY);
 
         // Dropdown chọn lớp (cho giáo viên)
@@ -274,7 +272,6 @@ public class ModernDiemPanel extends JPanel {
         JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         toolbarPanel.setBackground(BACKGROUND_COLOR);
         toolbarPanel.add(btnExport);
-        toolbarPanel.add(btnImport);
 
         topPanel.add(titlePanel, BorderLayout.WEST);
         topPanel.add(toolbarPanel, BorderLayout.EAST);
@@ -411,7 +408,6 @@ public class ModernDiemPanel extends JPanel {
             btnThem.setVisible(false);
             btnSua.setVisible(false);
             btnXoa.setVisible(false);
-            btnImport.setVisible(false);
             btnRefresh.setVisible(false); // Hide Refresh button
 
             // Disable form fields
@@ -687,7 +683,6 @@ public class ModernDiemPanel extends JPanel {
         btnHuy.addActionListener(listener);
         btnSearch.addActionListener(listener);
         btnExport.addActionListener(listener);
-        btnImport.addActionListener(listener);
         btnRefresh.addActionListener(listener);
     }
 

@@ -27,7 +27,6 @@ public class HomeroomClassPanel extends JPanel {
     private JComboBox<String> cbSubject;
     private JTable tblGrades;
     private DefaultTableModel tableModel;
-    private JButton btnRefresh;
     private JButton btnExport;
 
     private String username;
@@ -59,7 +58,6 @@ public class HomeroomClassPanel extends JPanel {
         cbSubject.setPreferredSize(new Dimension(300, 35));
 
         // Buttons
-        btnRefresh = createButton("Làm mới", PRIMARY_COLOR);
         btnExport = createButton("Xuất Excel", SUCCESS_COLOR);
 
         // Table
@@ -127,7 +125,6 @@ public class HomeroomClassPanel extends JPanel {
         lblSubject.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         filterPanel.add(lblSubject);
         filterPanel.add(cbSubject);
-        filterPanel.add(btnRefresh);
         filterPanel.add(btnExport);
 
         // Table panel
@@ -228,11 +225,11 @@ public class HomeroomClassPanel extends JPanel {
         cbSubject.addActionListener(listener);
     }
 
-    public JButton getBtnRefresh() {
-        return btnRefresh;
-    }
-
     public JButton getBtnExport() {
         return btnExport;
+    }
+
+    public JTable getTable() {
+        return tblGrades;
     }
 }
