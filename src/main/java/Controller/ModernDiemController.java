@@ -45,7 +45,7 @@ public class ModernDiemController implements ActionListener, MouseListener {
         setupAutoCalculation();
     }
 
-    private void loadGlobalSettings() {
+    public void loadGlobalSettings() {
         CauHinhModel ch = new CauHinhModel().getGlobalSettings();
         if (ch != null) {
             this.globalNamHoc = ch.getNamhoc();

@@ -46,8 +46,7 @@ public class CauHinhModel {
 
     // Get current global settings (Auto-init defaults if missing)
     public CauHinhModel getGlobalSettings() {
-        // verifyTableExist(); // Removed excessive check, assume existing or handle in
-        // init
+        verifyTableExist(); // Ensure table exists before anything else
 
         String sql = "SELECT * FROM tblcauhinh LIMIT 1";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -63,13 +62,13 @@ public class CauHinhModel {
             }
 
             // If we are here, no settings exist.
-            // Insert default directly to avoid recursion
             return initDefaultSettings(conn);
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Database error in getGlobalSettings: " + e.getMessage());
+            // Fallback object to prevent crashes
+            return new CauHinhModel(0, "2024-2025", 1);
         }
-        return null;
     }
 
     private CauHinhModel initDefaultSettings(Connection conn) {
@@ -116,8 +115,7 @@ public class CauHinhModel {
 
     // Update global settings
     public boolean updateSettings(String namhoc, int hocky) {
-        // We know we want to update. if it doesn't exist, we insert.
-        // Instead of calling getGlobalSettings (recursion risk), just try UPDATE first.
+        verifyTableExist(); // Safety check
 
         String updateSql = "UPDATE tblcauhinh SET namhoc = ?, hocky = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -138,7 +136,7 @@ public class CauHinhModel {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Error updating settings: " + e.getMessage());
             return false;
         }
     }

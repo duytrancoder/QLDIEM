@@ -10,6 +10,7 @@ public class KhoaSoNienKhoaPanel extends JPanel {
     private JTextField tfNamHoc;
     private JComboBox<String> cbHocKy;
     private JButton btnLuu;
+    private Controller.ModernMainController mainController;
 
     // Colors
     private static final Color PRIMARY_COLOR = new Color(63, 81, 181);
@@ -21,11 +22,16 @@ public class KhoaSoNienKhoaPanel extends JPanel {
     private int userType = 0; // Default Admin
 
     public KhoaSoNienKhoaPanel() {
-        this(0);
+        this(0, null);
     }
 
-    public KhoaSoNienKhoaPanel(int userType) {
+    public KhoaSoNienKhoaPanel(Controller.ModernMainController mainController) {
+        this(0, mainController);
+    }
+
+    public KhoaSoNienKhoaPanel(int userType, Controller.ModernMainController mainController) {
         this.userType = userType;
+        this.mainController = mainController;
         initComponents();
         loadCurrentSettings();
     }
@@ -140,6 +146,9 @@ public class KhoaSoNienKhoaPanel extends JPanel {
             if (success) {
                 JOptionPane.showMessageDialog(this, "Cập nhật cấu hình thành công!", "Thông báo",
                         JOptionPane.INFORMATION_MESSAGE);
+                if (mainController != null) {
+                    mainController.refreshGlobalSettings();
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "Cập nhật thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }

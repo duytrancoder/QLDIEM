@@ -17,13 +17,22 @@ public class UpdateSchemaV2 {
 
             Statement stmt = conn.createStatement();
 
-            // 1. Create tblbomon
+            // 1. Create tblbomon & add cacmon column
             try {
                 String sql = "CREATE TABLE IF NOT EXISTS tblbomon (" +
                         "mabomon VARCHAR(20) PRIMARY KEY," +
                         "tenbomon VARCHAR(100) NOT NULL" +
                         ")";
                 stmt.execute(sql);
+
+                // Add cacmon column if not exists
+                try {
+                    stmt.execute("ALTER TABLE tblbomon ADD COLUMN cacmon TEXT");
+                    System.out.println("SUCCESS: Added cacmon to tblbomon.");
+                } catch (SQLException e) {
+                    // Ignore duplicate column error
+                }
+
                 System.out.println("SUCCESS: Processed tblbomon.");
             } catch (SQLException e) {
                 System.out.println("ERROR tblbomon: " + e.getMessage());
@@ -96,6 +105,27 @@ public class UpdateSchemaV2 {
                 }
             } catch (SQLException e) {
                 System.out.println("ERROR tblphancong: " + e.getMessage());
+            }
+
+            // 6. Create tblcauhinh and init default
+            try {
+                String sql = "CREATE TABLE IF NOT EXISTS tblcauhinh (" +
+                        "id INT AUTO_INCREMENT PRIMARY KEY," +
+                        "ten_truong VARCHAR(200) DEFAULT 'Trường Đại học Công Nghệ'," +
+                        "namhoc VARCHAR(20) DEFAULT '2024-2025'," +
+                        "hocky INT DEFAULT 1" +
+                        ")";
+                stmt.execute(sql);
+
+                // Check if table is empty
+                java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM tblcauhinh");
+                if (rs.next() && rs.getInt(1) == 0) {
+                    stmt.execute("INSERT INTO tblcauhinh (namhoc, hocky) VALUES ('2024-2025', 1)");
+                    System.out.println("SUCCESS: Initialized default settings in tblcauhinh.");
+                }
+                System.out.println("SUCCESS: Processed tblcauhinh.");
+            } catch (SQLException e) {
+                System.out.println("ERROR tblcauhinh: " + e.getMessage());
             }
 
         } catch (Exception e) {

@@ -1,6 +1,5 @@
 package Controller;
 
-import Model.DiemModel;
 import View.ModernMainLayout;
 import View.ModernDiemPanel;
 import View.QuanLyLopPanel;
@@ -10,16 +9,7 @@ import View.QuanLyGiaoVienPanel;
 import View.KhoaSoNienKhoaPanel;
 import View.QuanLyBoMonPanel;
 import View.QuanLyMonHocPanel; // New
-import Controller.QuanLyLopController;
-import Controller.PhanCongGiaoVienController;
-import Controller.QuanLySinhVienController;
-import Controller.QuanLyGiaoVienController;
-import Controller.QuanLyBoMonController;
-import Controller.QuanLyMonHocController;
-import Controller.HomeroomClassController;
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * Modern MainController with enhanced functionality
@@ -38,6 +28,7 @@ public class ModernMainController {
     private QuanLyGiaoVienController gvController;
     private QuanLyBoMonController boMonController;
     private QuanLyMonHocController monHocController; // New
+    private ModernDiemController diemController;
 
     public ModernMainController(ModernMainLayout view, String username, int userType) {
         this.view = view;
@@ -59,7 +50,7 @@ public class ModernMainController {
         view.getMainContentPanel().add(diemPanel, "DIEM");
 
         // Initialize DiemController
-        ModernDiemController diemController = new ModernDiemController(diemPanel, username, userType);
+        this.diemController = new ModernDiemController(diemPanel, username, userType);
 
         // Initialize Admin panels
         if (userType == 0) {
@@ -100,7 +91,7 @@ public class ModernMainController {
             new Controller.QuanLyThongBaoController(tbPanel, username, 0, "Admin");
 
             // Khóa sổ & Niên khóa
-            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel();
+            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(this);
             view.getMainContentPanel().add(khoaSoPanel, "KHOASO");
 
         } else if (userType == 1) { // Teacher
@@ -121,7 +112,7 @@ public class ModernMainController {
             new Controller.HomeroomClassController(homeroomPanel, username);
 
             // Khóa sổ & Niên khóa (Read-Only for Teacher)
-            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(userType);
+            KhoaSoNienKhoaPanel khoaSoPanel = new KhoaSoNienKhoaPanel(userType, this);
             view.getMainContentPanel().add(khoaSoPanel, "KHOASO");
 
         } else if (userType == 2) { // Student
@@ -257,6 +248,16 @@ public class ModernMainController {
             }
             updateDashboardStats();
         }
+    }
+
+    /**
+     * Refresh academic year settings across panels
+     */
+    public void refreshGlobalSettings() {
+        if (diemController != null) {
+            diemController.loadGlobalSettings();
+        }
+        updateDashboardStats();
     }
 
     /**
