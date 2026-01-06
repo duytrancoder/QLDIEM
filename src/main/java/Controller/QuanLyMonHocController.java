@@ -11,9 +11,11 @@ public class QuanLyMonHocController {
 
     private QuanLyMonHocPanel view;
     private MonHocModel model;
+    private ModernMainController mainController;
 
-    public QuanLyMonHocController(QuanLyMonHocPanel view) {
+    public QuanLyMonHocController(QuanLyMonHocPanel view, ModernMainController mainController) {
         this.view = view;
+        this.mainController = mainController;
         this.model = new MonHocModel();
 
         initController();
@@ -40,7 +42,7 @@ public class QuanLyMonHocController {
         });
     }
 
-    private void loadData() {
+    public void loadData() {
         ArrayList<MonHocModel> list = model.getAllMonHoc();
         view.getTableModel().setRowCount(0);
         for (MonHocModel mh : list) {
@@ -62,6 +64,9 @@ public class QuanLyMonHocController {
             JOptionPane.showMessageDialog(view, "Thêm môn học thành công!");
             loadData();
             refresh();
+            if (mainController != null) {
+                mainController.refreshSubjectRelatedData();
+            }
         } else {
             // Check if exist
             boolean exists = false;
@@ -90,6 +95,9 @@ public class QuanLyMonHocController {
             JOptionPane.showMessageDialog(view, "Cập nhật thành công!");
             loadData();
             refresh();
+            if (mainController != null) {
+                mainController.refreshSubjectRelatedData();
+            }
         } else {
             JOptionPane.showMessageDialog(view, "Cập nhật thất bại!");
         }
@@ -111,13 +119,16 @@ public class QuanLyMonHocController {
                 JOptionPane.showMessageDialog(view, "Xóa thành công!");
                 loadData();
                 refresh();
+                if (mainController != null) {
+                    mainController.refreshSubjectRelatedData();
+                }
             } else {
                 JOptionPane.showMessageDialog(view, "Xóa thất bại! Môn học có thể đang được sử dụng.");
             }
         }
     }
 
-    private void refresh() {
+    public void refresh() {
         view.clearForm();
         view.getBtnThem().setEnabled(true);
         view.getBtnSua().setEnabled(true);

@@ -122,7 +122,7 @@ public class QuanLyBoMonController {
         }
     }
 
-    private void refreshBoMon() {
+    public void refreshBoMon() {
         view.clearForm();
         loadDataBoMon();
         loadAvailableSubjects(); // Refresh subject list too

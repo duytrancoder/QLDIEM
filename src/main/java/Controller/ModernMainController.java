@@ -91,7 +91,7 @@ public class ModernMainController {
             // Quan Ly Mon Hoc (New)
             QuanLyMonHocPanel mhPanel = new QuanLyMonHocPanel();
             view.getMainContentPanel().add(mhPanel, "MONHOC");
-            monHocController = new QuanLyMonHocController(mhPanel);
+            monHocController = new QuanLyMonHocController(mhPanel, this); // Pass main controller
 
             // Thông báo (Admin)
             View.QuanLyThongBaoPanel tbPanel = new View.QuanLyThongBaoPanel(0); // 0=Admin
@@ -150,10 +150,8 @@ public class ModernMainController {
             }); // Phân lớp
             view.onQuanLyLopClick(e -> view.showPanel("LOP")); // Quản lý lớp
             view.onQuanLyBoMonClick(e -> {
-                // Ideally refresh BoMon too if subjects changed in MONHOC panel
-                // (Though user didn't explicitly complain about this direction)
-                // if (boMonController != null) boMonController.loadAvailableSubjects(); //
-                // Assuming it exists
+                if (boMonController != null)
+                    boMonController.refreshBoMon();
                 view.showPanel("BOMON");
             });
             view.onMonHocClick(e -> view.showPanel("MONHOC")); // Quản lý môn học (New)
@@ -232,8 +230,29 @@ public class ModernMainController {
             if (svController != null) {
                 svController.refreshAllData();
             }
+            if (boMonController != null) {
+                boMonController.refreshBoMon();
+            }
+            if (monHocController != null) {
+                monHocController.loadData(); // Assuming we make this public or add refresh
+            }
         }
         updateDashboardStats(); // Update stats on data change
+    }
+
+    /**
+     * Refresh all data when subjects are modified
+     */
+    public void refreshSubjectRelatedData() {
+        if (userType == 0) {
+            if (boMonController != null) {
+                boMonController.refreshBoMon();
+            }
+            if (phanCongController != null) {
+                phanCongController.refreshAll();
+            }
+            updateDashboardStats();
+        }
     }
 
     /**
