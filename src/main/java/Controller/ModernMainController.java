@@ -226,6 +226,10 @@ public class ModernMainController {
      * Update Dashboard Statistics
      */
     public void updateDashboardStats() {
+        System.out.println("=== updateDashboardStats called ===");
+        System.out.println("Username: " + username);
+        System.out.println("UserType: " + userType);
+
         try {
             Model.SinhVienModel svModel = new Model.SinhVienModel();
             Model.GiaoVienModel gvModel = new Model.GiaoVienModel();
@@ -237,38 +241,177 @@ public class ModernMainController {
                 view.updateStat("GV", String.valueOf(gvModel.getTeacherCount()));
                 view.updateStat("Lớp", String.valueOf(lopModel.getClassCount()));
                 view.updateStat("Môn", String.valueOf(diemModel.getSubjectCount()));
-            } else if (userType == 1) { // Giáo viên
-                String magv = null;
-                try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
-                        java.sql.PreparedStatement ps = conn
-                                .prepareStatement("SELECT magv FROM tblgiaovien WHERE username = ?")) {
-                    ps.setString(1, username);
-                    try (java.sql.ResultSet rs = ps.executeQuery()) {
-                        if (rs.next())
-                            magv = rs.getString(1);
-                    }
+            } else if (userType == 1) { // Giáo viên - new statistics
+                System.out.println("Processing teacher statistics...");
+
+                // Convert username to magv (e.g., gv001 -> GV001)
+                String magv = username.toUpperCase();
+                System.out.println("Derived magv from username: " + magv);
+
+                if (magv != null && !magv.isEmpty()) {
+                    // 1. Count subjects assigned to teacher
+                    int subjectCount = countSubjectsByTeacher(magv);
+                    System.out.println("Subject count: " + subjectCount);
+
+                    // 2. Count classes managed by teacher
+                    int classCount = countClassesByTeacher(magv);
+                    System.out.println("Class count: " + classCount);
+
+                    // 3. Count total students in managed classes
+                    int totalStudents = countStudentsByTeacher(magv);
+                    System.out.println("Total students: " + totalStudents);
+
+                    // 4. Count students in homeroom class
+                    int homeroomStudents = countHomeroomStudents(magv);
+                    System.out.println("Homeroom students: " + homeroomStudents);
+
+                    view.updateStat("Môn", String.valueOf(subjectCount));
+                    view.updateStat("Lớp", String.valueOf(classCount));
+                    view.updateStat("SV", String.valueOf(totalStudents));
+                    view.updateStat("SVCN", String.valueOf(homeroomStudents));
+                    System.out.println("Stats updated successfully");
+                } else {
+                    System.out.println("ERROR: magv is null or empty");
                 }
-                if (magv != null) {
-                    int studentCount = svModel.getStudentCountByTeacher(magv);
-                    view.updateStat("SV", String.valueOf(studentCount));
-                    view.updateStat("Điểm", String.valueOf(diemModel.getGradedCountByTeacher(magv)));
-                    view.updateStat("Lớp", String.valueOf(lopModel.getClassCountByTeacher(magv)));
-                    view.updateStat("Môn", "1");
-                }
-            } else if (userType == 2) { // Sinh viên
+            } else if (userType == 2) { // Sinh viên - new statistics
                 String masv = diemModel.getMasvByUsername(username);
                 if (masv != null) {
-                    view.updateStat("Môn", String.valueOf(diemModel.getStudentSubjectCount(masv)));
-                    view.updateStat("TB", String.valueOf(diemModel.getStudentAverageScore(masv)));
-                    view.updateStat("HT", String.valueOf(diemModel.getPassedCount(masv)));
-                    view.updateStat("CB", String.valueOf(diemModel.getImprovementCount(masv)));
-                    view.updateStat("XH", "...");
-                    view.updateStat("TinChi", String.valueOf(diemModel.getPassedCount(masv) * 3));
+                    // 1. Count total subjects
+                    int subjectCount = countSubjectsByStudent(masv);
+
+                    // 2. Calculate average grade
+                    double avgGrade = calculateAverageGrade(masv);
+
+                    // 3. Get classification based on average
+                    String classification = getGradeClassification(avgGrade);
+
+                    view.updateStat("Môn", String.valueOf(subjectCount));
+                    view.updateStat("TB", avgGrade > 0 ? String.format("%.2f", avgGrade) : "N/A");
+                    view.updateStat("XL", classification);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // Helper methods for teacher statistics
+    private int countSubjectsByTeacher(String magv) {
+        System.out.println("countSubjectsByTeacher called with magv: " + magv);
+        String sql = "SELECT COUNT(DISTINCT mamon) FROM tbl_giangday WHERE magv = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, magv);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    System.out.println("Subject count result: " + count);
+                    return count;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR in countSubjectsByTeacher: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private int countClassesByTeacher(String magv) {
+        String sql = "SELECT COUNT(DISTINCT malop) FROM tblphancong WHERE magv = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, magv);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private int countStudentsByTeacher(String magv) {
+        String sql = "SELECT COUNT(DISTINCT s.masv) " +
+                "FROM tblsinhvien s " +
+                "JOIN tblphancong p ON s.malop = p.malop " +
+                "WHERE p.magv = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, magv);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private int countHomeroomStudents(String magv) {
+        String sql = "SELECT COUNT(s.masv) " +
+                "FROM tblsinhvien s " +
+                "JOIN tblclass c ON s.malop = c.malop " +
+                "WHERE c.magvcn = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, magv);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // Helper methods for student statistics
+    private int countSubjectsByStudent(String masv) {
+        String sql = "SELECT COUNT(DISTINCT mamon) FROM tbldiem WHERE masv = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, masv);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private double calculateAverageGrade(String masv) {
+        String sql = "SELECT AVG(diemtongket) FROM tbldiem WHERE masv = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, masv);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double avg = rs.getDouble(1);
+                    return rs.wasNull() ? 0.0 : avg;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
+    private String getGradeClassification(double avg) {
+        if (avg >= 9.0)
+            return "Xuất sắc";
+        if (avg >= 8.0)
+            return "Giỏi";
+        if (avg >= 6.5)
+            return "Khá";
+        if (avg >= 5.0)
+            return "Trung bình";
+        if (avg > 0)
+            return "Yếu";
+        return "N/A";
     }
 
     private void handleLogout() {

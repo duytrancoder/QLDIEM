@@ -234,22 +234,24 @@ public class ModernMainLayout extends JFrame {
             statsPanel.add(createStatsCard("GV", "Tổng Giáo viên", "...", PRIMARY_COLOR));
             statsPanel.add(createStatsCard("Lớp", "Tổng Lớp", "...", ACCENT_COLOR));
             statsPanel.add(createStatsCard("Môn", "Tổng Môn", "...", SUCCESS_COLOR));
-        } else if (userType == 1) { // Giáo viên
+        } else if (userType == 1) { // Giáo viên - 4 cards in 2x2 grid
             statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
             statsPanel.setBackground(BACKGROUND_COLOR);
             statsPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
 
+            statsPanel.add(createStatsCard("Môn", "Môn phụ trách", "...", PRIMARY_COLOR));
+            statsPanel.add(createStatsCard("Lớp", "Lớp quản lý", "...", ACCENT_COLOR));
             statsPanel.add(createStatsCard("SV", "SV được dạy", "...", SUCCESS_COLOR));
-            statsPanel.add(createStatsCard("Điểm", "Điểm đã chấm", "...", PRIMARY_COLOR));
-            statsPanel.add(createStatsCard("Môn", "Môn phụ trách", "...", ACCENT_COLOR));
-            statsPanel.add(createStatsCard("Lớp", "Lớp quản lý", "...", WARNING_COLOR));
-        } else { // Sinh viên
+            statsPanel.add(createStatsCard("SVCN", "SV lớp chủ nhiệm", "...", WARNING_COLOR));
+        } else { // Sinh viên - 4 cards in 2x2 grid
+            statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+            statsPanel.setBackground(BACKGROUND_COLOR);
+            statsPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
+
             statsPanel.add(createStatsCard("Môn", "Tổng môn học", "...", PRIMARY_COLOR));
-            statsPanel.add(createStatsCard("TB", "Điểm TB", "...", SUCCESS_COLOR));
-            statsPanel.add(createStatsCard("HT", "Đã hoàn thành", "...", SUCCESS_COLOR));
-            statsPanel.add(createStatsCard("CB", "Cần cải thiện", "...", WARNING_COLOR));
-            statsPanel.add(createStatsCard("XH", "Xếp hạng lớp", "...", ACCENT_COLOR));
-            statsPanel.add(createStatsCard("TinChi", "Tín chỉ đạt", "...", SUCCESS_COLOR));
+            statsPanel.add(createStatsCard("TB", "Điểm trung bình", "...", SUCCESS_COLOR));
+            statsPanel.add(createStatsCard("XL", "Xếp loại hiện tại", "...", ACCENT_COLOR));
+            statsPanel.add(createStatsCard("Info", "Thông tin", "---", TEXT_SECONDARY));
         }
 
         return statsPanel;
