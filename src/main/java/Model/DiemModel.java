@@ -236,6 +236,57 @@ public class DiemModel {
         return list;
     }
 
+    // Phương thức mới cho Sinh viên - với tên môn và giáo viên
+    public ArrayList<Object[]> getDiemByUsernameWithDetails(String username) {
+        ArrayList<Object[]> list = new ArrayList<>();
+        // Query lấy điểm kèm tên môn và giáo viên
+        String query = "SELECT d.mamon, m.tenmon, g.hoten AS giaovien, " +
+                "d.diemcc, d.diemgk, d.diemck, d.diemtongket " +
+                "FROM tbldiem d " +
+                "JOIN tblsinhvien sv ON d.masv = sv.masv " +
+                "LEFT JOIN tblmonhoc m ON d.mamon = m.mamon " +
+                "LEFT JOIN tbl_giangday gd ON d.mamon = gd.mamon " +
+                "LEFT JOIN tblgiaovien g ON gd.magv = g.magv " +
+                "WHERE sv.username = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Object[] row = new Object[8];
+                    row[0] = rs.getString("mamon");
+                    row[1] = rs.getString("tenmon") != null ? rs.getString("tenmon") : "N/A";
+                    row[2] = rs.getString("giaovien") != null ? rs.getString("giaovien") : "N/A";
+                    row[3] = rs.getDouble("diemcc");
+                    row[4] = rs.getDouble("diemgk");
+                    row[5] = rs.getDouble("diemck");
+                    row[6] = rs.getDouble("diemtongket");
+                    row[7] = getXepLoai(rs.getDouble("diemtongket"));
+                    list.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL khi lấy điểm chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Helper method để xếp loại
+    private String getXepLoai(double diem) {
+        if (diem >= 9.0)
+            return "Xuất sắc";
+        if (diem >= 8.0)
+            return "Giỏi";
+        if (diem >= 6.5)
+            return "Khá";
+        if (diem >= 5.0)
+            return "Trung bình";
+        if (diem > 0)
+            return "Yếu";
+        return "Chưa có";
+    }
+
     /**
      * Lấy điểm của sinh viên trong một lớp (cho giáo viên)
      */

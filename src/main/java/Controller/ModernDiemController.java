@@ -134,10 +134,13 @@ public class ModernDiemController implements ActionListener, MouseListener {
     private void loadInitialData() {
         try {
             ArrayList<DiemModel> data;
-            if (userType == 2) { // Sinh viên
-                data = model.getDiemByUsername(username);
-                view.loadTableData(data);
-                showStatusMessage("Đã tải " + data.size() + " bản ghi điểm", MessageType.SUCCESS);
+            if (userType == 2) { // Sinh viên - load with subject and teacher names
+                ArrayList<Object[]> detailedData = model.getDiemByUsernameWithDetails(username);
+                view.getTableModel().setRowCount(0);
+                for (Object[] row : detailedData) {
+                    view.getTableModel().addRow(row);
+                }
+                showStatusMessage("Đã tải " + detailedData.size() + " bản ghi điểm", MessageType.SUCCESS);
             } else if (userType == 1) { // Giáo viên - đợi chọn lớp và môn
                 view.loadTableData(new ArrayList<>());
                 showStatusMessage("Vui lòng chọn lớp và môn học để xem điểm", MessageType.INFO);

@@ -125,6 +125,14 @@ public class ModernDiemPanel extends JPanel {
         lblMonHoc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblMonHoc.setForeground(TEXT_PRIMARY);
 
+        // Hide dropdowns for students
+        if (userType == 2) {
+            cbLop.setVisible(false);
+            lblLop.setVisible(false);
+            cbMonHoc.setVisible(false);
+            lblMonHoc.setVisible(false);
+        }
+
         // Initially hide save/cancel buttons
         btnLuu.setVisible(false);
         btnHuy.setVisible(false);
@@ -172,7 +180,7 @@ public class ModernDiemPanel extends JPanel {
         String[] columns;
         if (userType == 2) { // Sinh viên
             columns = new String[] {
-                    "Mã Môn", "ĐG Thường Xuyên", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
+                    "Mã Môn", "Tên Môn", "Giáo Viên", "ĐG Thường Xuyên", "Giữa Kỳ", "Cuối Kỳ", "Tổng Kết", "Xếp Loại"
             };
         } else { // Giáo viên & Admin
             columns = new String[] {
@@ -206,7 +214,7 @@ public class ModernDiemPanel extends JPanel {
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
 
-        int startCenterIndex = (userType == 2) ? 1 : 2; // Student starts at 1, Teacher at 2
+        int startCenterIndex = (userType == 2) ? 3 : 2; // Student starts at column 3 (scores), Teacher at 2
         for (int i = startCenterIndex; i < columns.length; i++) {
             tblDiem.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
@@ -692,6 +700,10 @@ public class ModernDiemPanel extends JPanel {
 
     public JTable getTable() {
         return tblDiem;
+    }
+
+    public DefaultTableModel getTableModel() {
+        return tableModel;
     }
 
     public void updateTotalScore() {
