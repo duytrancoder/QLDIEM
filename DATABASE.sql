@@ -45,10 +45,7 @@ CREATE TABLE `tblmonhoc` (
   `mamon` varchar(20) NOT NULL,
   `tenmon` varchar(100) NOT NULL,
   `sotinchi` int(11) NOT NULL CHECK (`sotinchi` > 0),
-  `mabomon` varchar(20) DEFAULT NULL COMMENT 'Thuộc bộ môn nào',
-  PRIMARY KEY (`mamon`),
-  KEY `fk_monhoc_bomon` (`mabomon`),
-  CONSTRAINT `fk_monhoc_bomon` FOREIGN KEY (`mabomon`) REFERENCES `tblbomon` (`mabomon`) ON DELETE SET NULL
+  PRIMARY KEY (`mamon`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng: tblgiaovien (Mỗi giáo viên thuộc 1 bộ môn và có thể dạy nhiều môn)
@@ -101,10 +98,13 @@ CREATE TABLE `tblclass` (
 CREATE TABLE `tblphancong` (
   `magv` varchar(20) NOT NULL,
   `malop` varchar(20) NOT NULL,
-  PRIMARY KEY (`magv`, `malop`),
+  `mamon` varchar(20) NOT NULL,
+  PRIMARY KEY (`magv`, `malop`, `mamon`),
   KEY `malop` (`malop`),
+  KEY `fk_phancong_monhoc` (`mamon`),
   CONSTRAINT `tblphancong_ibfk_1` FOREIGN KEY (`magv`) REFERENCES `tblgiaovien` (`magv`),
-  CONSTRAINT `tblphancong_ibfk_2` FOREIGN KEY (`malop`) REFERENCES `tblclass` (`malop`)
+  CONSTRAINT `tblphancong_ibfk_2` FOREIGN KEY (`malop`) REFERENCES `tblclass` (`malop`),
+  CONSTRAINT `fk_phancong_monhoc` FOREIGN KEY (`mamon`) REFERENCES `tblmonhoc` (`mamon`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng: tblsinhvien
@@ -247,16 +247,17 @@ INSERT INTO `tblsinhvien` (`masv`, `hoten`, `ngaysinh`, `gioitinh`, `diachi`, `m
 -- GV003 (Anh) quản lý L02 và L03
 -- GV004 (Lý) quản lý L01
 -- GV005 (Hóa) quản lý L02 và L03
-INSERT INTO `tblphancong` (`magv`, `malop`) VALUES
-('GV001', 'L01'),
-('GV001', 'L02'),
-('GV002', 'L01'),
-('GV002', 'L03'),
-('GV003', 'L02'),
-('GV003', 'L03'),
-('GV004', 'L01'),
-('GV005', 'L02'),
-('GV005', 'L03');
+INSERT INTO `tblphancong` (`magv`, `malop`, `mamon`) VALUES
+('GV001', 'L01', 'MH01'),
+('GV001', 'L02', 'MH01'),
+('GV002', 'L01', 'MH02'),
+('GV002', 'L03', 'MH02'),
+('GV003', 'L02', 'MH03'),
+('GV003', 'L03', 'MH03'),
+('GV004', 'L01', 'MH04'),
+('GV004', 'L01', 'MH01'),
+('GV005', 'L02', 'MH05'),
+('GV005', 'L03', 'MH05');
 
 -- Dữ liệu: tbldiem (Một số điểm mẫu)
 -- Điểm cho sinh viên lớp L01

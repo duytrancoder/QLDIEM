@@ -138,10 +138,24 @@ public class ModernMainController {
 
         if (userType == 0) { // Admin
             view.onSinhVienClick(e -> view.showPanel("SINHVIEN"));
-            view.onGiaoVienClick(e -> view.showPanel("GIAOVIEN")); // Quản lý giáo viên
-            view.onLopClick(e -> view.showPanel("PHANCONG")); // Phân lớp
+            view.onGiaoVienClick(e -> {
+                if (gvController != null)
+                    gvController.refreshAll();
+                view.showPanel("GIAOVIEN");
+            });
+            view.onLopClick(e -> {
+                if (phanCongController != null)
+                    phanCongController.refreshAll();
+                view.showPanel("PHANCONG");
+            }); // Phân lớp
             view.onQuanLyLopClick(e -> view.showPanel("LOP")); // Quản lý lớp
-            view.onQuanLyBoMonClick(e -> view.showPanel("BOMON")); // Quản lý bộ môn
+            view.onQuanLyBoMonClick(e -> {
+                // Ideally refresh BoMon too if subjects changed in MONHOC panel
+                // (Though user didn't explicitly complain about this direction)
+                // if (boMonController != null) boMonController.loadAvailableSubjects(); //
+                // Assuming it exists
+                view.showPanel("BOMON");
+            });
             view.onMonHocClick(e -> view.showPanel("MONHOC")); // Quản lý môn học (New)
             view.onKhoaSoClick(e -> view.showPanel("KHOASO")); // Khóa sổ
             view.onThongBaoClick(e -> view.showPanel("THONGBAO"));

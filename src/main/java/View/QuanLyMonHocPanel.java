@@ -192,7 +192,7 @@ public class QuanLyMonHocPanel extends JPanel {
 
     public MonHocModel getFormData() {
         // Return default sotinchi = 3 to Controller
-        return new MonHocModel(tfMaMon.getText().trim(), tfTenMon.getText().trim(), null, 3);
+        return new MonHocModel(tfMaMon.getText().trim(), tfTenMon.getText().trim(), 3);
     }
 
     public void setFormData(MonHocModel mh) {

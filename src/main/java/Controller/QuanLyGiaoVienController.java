@@ -2,7 +2,7 @@ package Controller;
 
 import Model.GiaoVienModel;
 import Model.BoMonModel;
-import Model.MonHocModel; // Ensure this exists and has getMonHocByBoMon
+import Model.MonHocModel;
 import View.QuanLyGiaoVienPanel;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -18,6 +18,7 @@ public class QuanLyGiaoVienController implements ActionListener, MouseListener {
     private BoMonModel boMonModel;
     private MonHocModel monHocModel;
     private GiaoVienModel currentGV = null;
+    private ArrayList<BoMonModel> cachedBoMons = new ArrayList<>();
 
     public QuanLyGiaoVienController(QuanLyGiaoVienPanel view) {
         this.view = view;
@@ -37,13 +38,30 @@ public class QuanLyGiaoVienController implements ActionListener, MouseListener {
     private void setupComboBoxListener() {
         view.getCbBoMon().addActionListener(e -> {
             String selection = (String) view.getCbBoMon().getSelectedItem();
-            if (selection != null && selection.contains(" - ")) {
-                String mabomon = selection.split(" - ")[0];
-                loadMonHocForBoMon(mabomon);
+            // Robust check: ensure it's not the default prompt and has the separator
+            if (selection != null && selection.contains(" - ")
+                    && !selection.startsWith("--")) {
+                String mabomon = selection.split(" - ")[0].trim();
+
+                // Find the cacmon list for this mabomon from cache
+                String csvMamon = "";
+                for (BoMonModel bm : cachedBoMons) {
+                    if (bm.getMabomon().equalsIgnoreCase(mabomon)) {
+                        csvMamon = bm.getCacMon();
+                        break;
+                    }
+                }
+                loadMonHocForBoMon(csvMamon);
             } else {
                 view.loadMonHoc(new ArrayList<>()); // Clear if no valid selection
             }
         });
+    }
+
+    public void refreshAll() {
+        loadBoMonList(); // Reload depts
+        loadData(); // Reload teachers
+        view.loadMonHoc(new ArrayList<>()); // Clear subject list
     }
 
     private void loadData() {
@@ -52,20 +70,21 @@ public class QuanLyGiaoVienController implements ActionListener, MouseListener {
     }
 
     private void loadBoMonList() {
-        ArrayList<BoMonModel> list = boMonModel.getAllBoMon();
+        cachedBoMons = boMonModel.getAllBoMon();
         ArrayList<String> strings = new ArrayList<>();
-        for (BoMonModel bm : list) {
-            strings.add(bm.getMabomon() + " - " + bm.getTenbomon());
+        for (BoMonModel bm : cachedBoMons) {
+            if (bm.getMabomon() != null) {
+                strings.add(bm.getMabomon().trim() + " - " + bm.getTenbomon());
+            }
         }
         view.loadBoMon(strings);
     }
 
-    // Updated to load subjects based on Dept
-    private void loadMonHocForBoMon(String mabomon) {
-        ArrayList<MonHocModel> list = monHocModel.getMonHocByBoMon(mabomon);
+    private void loadMonHocForBoMon(String csvMamon) {
+        ArrayList<MonHocModel> list = monHocModel.getMonHocByCodes(csvMamon);
         ArrayList<String> strings = new ArrayList<>();
         for (MonHocModel mh : list) {
-            strings.add(mh.getMamon() + " - " + mh.getTenmon());
+            strings.add(mh.getMamon().trim() + " - " + mh.getTenmon());
         }
         view.loadMonHoc(strings);
     }
@@ -112,7 +131,6 @@ public class QuanLyGiaoVienController implements ActionListener, MouseListener {
                 return;
             }
 
-            // Check if Dept is selected
             if (gv.getMabomon() == null || gv.getMabomon().isEmpty()) {
                 JOptionPane.showMessageDialog(view, "Vui lòng chọn Bộ môn!");
                 return;
@@ -192,6 +210,7 @@ public class QuanLyGiaoVienController implements ActionListener, MouseListener {
     }
 
     private void handleRefresh() {
+        refreshAll();
         view.clearForm();
         currentGV = null;
     }
@@ -202,17 +221,16 @@ public class QuanLyGiaoVienController implements ActionListener, MouseListener {
         if (row >= 0) {
             try {
                 JTable table = view.getTable();
-                // We fetch fresh from DB because table might have truncated CSVs
                 String magv = table.getValueAt(row, 0).toString();
-                GiaoVienModel gv = model.getGiaoVienByMagv(magv); // Fetch full data including CSVs
+                GiaoVienModel gv = model.getGiaoVienByMagv(magv);
 
                 if (gv != null) {
                     view.fillForm(gv);
-                    // Force selection of subjects after list reload
-                    // fillForm trigger cbBoMon action -> loads list -> wait -> select
-                    // Since Swing is single threaded, action should fire immediately?
-                    // We might need to manually set selection after fillForm
-                    view.setSelectedSubjects(gv.getCacMon());
+                    // fillForm might trigger combo box action (async or immediate)
+                    // We wait a tiny bit or just call it after ensuring form is filled
+                    SwingUtilities.invokeLater(() -> {
+                        view.setSelectedSubjects(gv.getCacMon());
+                    });
                     currentGV = gv;
                 }
             } catch (Exception ex) {

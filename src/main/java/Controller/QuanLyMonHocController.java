@@ -131,6 +131,6 @@ public class QuanLyMonHocController {
         String mamon = (valMa != null) ? valMa.toString() : "";
         String tenmon = (valTen != null) ? valTen.toString() : "";
 
-        view.setFormData(new MonHocModel(mamon, tenmon, null, 3)); // 3 is default
+        view.setFormData(new MonHocModel(mamon, tenmon, 3)); // 3 is default
     }
 }

@@ -31,9 +31,14 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
 
         view.getCbGiaoVien().addActionListener(e -> updateSubjectList());
 
+        loadLop();
+    }
+
+    public void refreshAll() {
         loadData();
         loadGiaoVien();
         loadLop();
+        view.clearForm();
     }
 
     private void updateSubjectList() {
@@ -79,7 +84,7 @@ public class PhanCongGiaoVienController implements ActionListener, MouseListener
                 "JOIN tblgiaovien gv ON pc.magv = gv.magv " +
                 "LEFT JOIN tblmonhoc mh ON pc.mamon = mh.mamon " +
                 "LEFT JOIN tblclass c ON pc.malop = c.malop " +
-                "ORDER BY pc.magv, pc.malop";
+                "ORDER BY pc.magv, pc.malop, pc.mamon";
         try (Connection conn = DatabaseConnection.getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query)) {

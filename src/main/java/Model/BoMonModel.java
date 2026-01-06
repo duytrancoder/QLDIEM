@@ -53,7 +53,8 @@ public class BoMonModel {
         try (Connection conn = DatabaseConnection.getConnection();
                 Statement stmt = conn.createStatement()) {
 
-            // Try to read with cacmon column
+            // Source of truth: The 'cacmon' column in tblbomon itself.
+            // This allows M:N relationship (one subject in multiple departments).
             String query = "SELECT mabomon, tenbomon, cacmon FROM tblbomon ORDER BY mabomon";
             try (ResultSet rs = stmt.executeQuery(query)) {
                 while (rs.next()) {
@@ -61,18 +62,6 @@ public class BoMonModel {
                             rs.getString("mabomon"),
                             rs.getString("tenbomon"),
                             rs.getString("cacmon")));
-                }
-            } catch (SQLException e) {
-                // cacmon column might not exist yet, try without it
-                System.out.println("Note: cacmon column not found, using legacy query");
-                String fallbackQuery = "SELECT mabomon, tenbomon FROM tblbomon ORDER BY mabomon";
-                try (ResultSet rs2 = stmt.executeQuery(fallbackQuery)) {
-                    while (rs2.next()) {
-                        list.add(new BoMonModel(
-                                rs2.getString("mabomon"),
-                                rs2.getString("tenbomon"),
-                                null)); // No subjects
-                    }
                 }
             }
         } catch (SQLException e) {
@@ -87,16 +76,15 @@ public class BoMonModel {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // 1. Insert Department with subject list
+            // 1. Insert Department with its own subject list
             String query = "INSERT INTO tblbomon (mabomon, tenbomon, cacmon) VALUES (?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(query)) {
-                ps.setString(1, bm.getMabomon());
-                ps.setString(2, bm.getTenbomon());
+                ps.setString(1, bm.getMabomon().trim());
+                ps.setString(2, bm.getTenbomon().trim());
                 ps.setString(3, bm.getCacMon()); // Save subject list
                 ps.executeUpdate();
             }
 
-            // Note: cacmon is stored in tblbomon for display only, not in tblmonhoc
             conn.commit();
             return true;
         } catch (SQLException e) {
@@ -124,16 +112,21 @@ public class BoMonModel {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // 1. Update Department Name and subject list
+            // 1. Update Department and its subject list
             String query = "UPDATE tblbomon SET tenbomon = ?, cacmon = ? WHERE mabomon = ?";
+            boolean updated = false;
             try (PreparedStatement ps = conn.prepareStatement(query)) {
-                ps.setString(1, bm.getTenbomon());
+                ps.setString(1, bm.getTenbomon().trim());
                 ps.setString(2, bm.getCacMon()); // Save subject list
-                ps.setString(3, bm.getMabomon());
-                ps.executeUpdate();
+                ps.setString(3, bm.getMabomon().trim());
+                updated = ps.executeUpdate() > 0;
             }
 
-            // Note: cacmon is stored in tblbomon for display only, not in tblmonhoc
+            if (!updated) {
+                conn.rollback();
+                return false;
+            }
+
             conn.commit();
             return true;
         } catch (SQLException e) {
@@ -161,21 +154,21 @@ public class BoMonModel {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // 1. Unassign subjects
-            String unassignQuery = "UPDATE tblmonhoc SET mabomon = NULL WHERE mabomon = ?";
-            try (PreparedStatement ps = conn.prepareStatement(unassignQuery)) {
-                ps.setString(1, mabomon);
-                ps.executeUpdate();
-            }
-
             // 2. Delete Department
             String query = "DELETE FROM tblbomon WHERE mabomon = ?";
+            boolean deleted = false;
             try (PreparedStatement ps = conn.prepareStatement(query)) {
-                ps.setString(1, mabomon);
-                ps.executeUpdate();
+                ps.setString(1, mabomon.trim());
+                deleted = ps.executeUpdate() > 0;
             }
-            conn.commit();
-            return true;
+
+            if (deleted) {
+                conn.commit();
+                return true;
+            } else {
+                conn.rollback();
+                return false;
+            }
         } catch (SQLException e) {
             try {
                 if (conn != null)

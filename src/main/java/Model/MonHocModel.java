@@ -7,22 +7,19 @@ import java.util.ArrayList;
 public class MonHocModel {
     private String mamon;
     private String tenmon;
-    private String mabomon;
     private int sotinchi;
 
     public MonHocModel() {
     }
 
-    public MonHocModel(String mamon, String tenmon, String mabomon, int sotinchi) {
+    public MonHocModel(String mamon, String tenmon, int sotinchi) {
         this.mamon = mamon;
         this.tenmon = tenmon;
-        this.mabomon = mabomon;
         this.sotinchi = sotinchi;
     }
 
-    // Constructor matching legacy calls (default sotinchi = 3 or 0)
-    public MonHocModel(String mamon, String tenmon, String mabomon) {
-        this(mamon, tenmon, mabomon, 0);
+    public MonHocModel(String mamon, String tenmon) {
+        this(mamon, tenmon, 0);
     }
 
     public String getMamon() {
@@ -30,7 +27,7 @@ public class MonHocModel {
     }
 
     public void setMamon(String mamon) {
-        this.mamon = mamon;
+        this.mamon = (mamon != null) ? mamon.trim() : null;
     }
 
     public String getTenmon() {
@@ -38,15 +35,7 @@ public class MonHocModel {
     }
 
     public void setTenmon(String tenmon) {
-        this.tenmon = tenmon;
-    }
-
-    public String getMabomon() {
-        return mabomon;
-    }
-
-    public void setMabomon(String mabomon) {
-        this.mabomon = mabomon;
+        this.tenmon = (tenmon != null) ? tenmon.trim() : null;
     }
 
     public int getSotinchi() {
@@ -57,18 +46,32 @@ public class MonHocModel {
         this.sotinchi = sotinchi;
     }
 
-    public ArrayList<MonHocModel> getMonHocByBoMon(String mabomon) {
+    public ArrayList<MonHocModel> getMonHocByCodes(String csvMamon) {
         ArrayList<MonHocModel> list = new ArrayList<>();
-        String query = "SELECT * FROM tblmonhoc WHERE mabomon = ?";
+        if (csvMamon == null || csvMamon.trim().isEmpty()) {
+            return list;
+        }
+
+        String[] codes = csvMamon.split(",");
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM tblmonhoc WHERE mamon IN (");
+        for (int i = 0; i < codes.length; i++) {
+            queryBuilder.append("?");
+            if (i < codes.length - 1) {
+                queryBuilder.append(",");
+            }
+        }
+        queryBuilder.append(")");
+
         try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, mabomon);
+                PreparedStatement ps = conn.prepareStatement(queryBuilder.toString())) {
+            for (int i = 0; i < codes.length; i++) {
+                ps.setString(i + 1, codes[i].trim());
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new MonHocModel(
                             rs.getString("mamon"),
                             rs.getString("tenmon"),
-                            rs.getString("mabomon"),
                             rs.getInt("sotinchi")));
                 }
             }
@@ -88,7 +91,6 @@ public class MonHocModel {
                 list.add(new MonHocModel(
                         rs.getString("mamon"),
                         rs.getString("tenmon"),
-                        rs.getString("mabomon"),
                         rs.getInt("sotinchi")));
             }
         } catch (SQLException e) {
@@ -98,13 +100,12 @@ public class MonHocModel {
     }
 
     public boolean addMonHoc(MonHocModel mh) {
-        String query = "INSERT INTO tblmonhoc (mamon, tenmon, mabomon, sotinchi) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO tblmonhoc (mamon, tenmon, sotinchi) VALUES (?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, mh.getMamon());
-            ps.setString(2, mh.getTenmon());
-            ps.setString(3, mh.getMabomon());
-            ps.setInt(4, mh.getSotinchi());
+            ps.setString(1, (mh.getMamon() != null) ? mh.getMamon().trim() : "");
+            ps.setString(2, (mh.getTenmon() != null) ? mh.getTenmon().trim() : "");
+            ps.setInt(3, mh.getSotinchi());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -116,9 +117,9 @@ public class MonHocModel {
         String query = "UPDATE tblmonhoc SET tenmon = ?, sotinchi = ? WHERE mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, mh.getTenmon());
+            ps.setString(1, (mh.getTenmon() != null) ? mh.getTenmon().trim() : "");
             ps.setInt(2, mh.getSotinchi());
-            ps.setString(3, mh.getMamon());
+            ps.setString(3, (mh.getMamon() != null) ? mh.getMamon().trim() : "");
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -130,7 +131,7 @@ public class MonHocModel {
         String query = "DELETE FROM tblmonhoc WHERE mamon = ?";
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, mamon);
+            ps.setString(1, (mamon != null) ? mamon.trim() : "");
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

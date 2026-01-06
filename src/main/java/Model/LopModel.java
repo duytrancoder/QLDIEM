@@ -463,7 +463,7 @@ public class LopModel {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             if (e.getErrorCode() == 1062) {
-                System.err.println("Giáo viên đã được phân công lớp này rồi!");
+                System.err.println("Giáo viên đã được phân công môn học này cho lớp này rồi!");
             } else {
                 System.err.println("Lỗi SQL khi thêm phân công: " + e.getMessage());
                 e.printStackTrace();
