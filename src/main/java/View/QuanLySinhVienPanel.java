@@ -83,8 +83,8 @@ public class QuanLySinhVienPanel extends JPanel {
         btnLamMoi = createButton("Làm mới", Color.GRAY);
         btnExport = createButton("Xuất Excel", SUCCESS_COLOR);
 
-        // Table
-        String[] columns = { "Mã SV", "Họ tên", "Ngày sinh", "Giới tính", "Địa chỉ", "Lớp" };
+        // Table - updated with "Mã lớp" and "Tên lớp"
+        String[] columns = { "Mã SV", "Họ tên", "Ngày sinh", "Giới tính", "Địa chỉ", "Mã lớp", "Tên lớp" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -220,10 +220,31 @@ public class QuanLySinhVienPanel extends JPanel {
                     formatDate(sv.getNgaysinh()), // Format Date
                     sv.getGioitinh(),
                     sv.getDiachi(),
-                    sv.getMalop()
+                    sv.getMalop(), // Mã lớp
+                    getClassNameByCode(sv.getMalop()) // Tên lớp
             };
             tableModel.addRow(row);
         }
+    }
+
+    // Helper method to get class name from class code
+    private String getClassNameByCode(String malop) {
+        if (malop == null || malop.isEmpty()) {
+            return "";
+        }
+        String query = "SELECT tenlop FROM tblclass WHERE malop = ?";
+        try (java.sql.Connection conn = connection.DatabaseConnection.getConnection();
+                java.sql.PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, malop);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("tenlop");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     private String formatDate(String mysqldate) {
