@@ -15,3 +15,4 @@ CREATE TABLE IF NOT EXISTS tbl_giangday (
 -- Ignore errors if columns already exist
 ALTER TABLE tblmonhoc ADD COLUMN IF NOT EXISTS mabomon VARCHAR(20);
 ALTER TABLE tblgiaovien ADD COLUMN IF NOT EXISTS mabomon VARCHAR(20);
+ALTER TABLE tblbomon ADD COLUMN cacmon TEXT;

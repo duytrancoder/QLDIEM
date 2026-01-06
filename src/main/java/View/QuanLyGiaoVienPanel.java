@@ -8,6 +8,10 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class QuanLyGiaoVienPanel extends JPanel {
 
@@ -23,7 +27,7 @@ public class QuanLyGiaoVienPanel extends JPanel {
     private JTextField tfMagv;
     private JTextField tfHoten;
     private JComboBox<String> cbGioitinh;
-    private JTextField dpNgaysinh;
+    private DatePicker dpNgaysinh;
     private JTextField tfEmail;
     private JTextField tfSdt;
 
@@ -56,8 +60,10 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfHoten = createTextField();
         cbGioitinh = new JComboBox<>(new String[] { "Nam", "Nữ" });
 
-        dpNgaysinh = new JTextField();
-        dpNgaysinh.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // Initialize DatePicker with Vietnamese format
+        DatePickerSettings dateSettings = new DatePickerSettings();
+        dateSettings.setFormatForDatesCommonEra("dd/MM/yyyy");
+        dpNgaysinh = new DatePicker(dateSettings);
         dpNgaysinh.setPreferredSize(new Dimension(200, 35));
         tfEmail = createTextField();
         tfSdt = createTextField();
@@ -306,8 +312,9 @@ public class QuanLyGiaoVienPanel extends JPanel {
         gv.setMagv(tfMagv.getText().trim());
         gv.setHoten(tfHoten.getText().trim());
         gv.setGioitinh((String) cbGioitinh.getSelectedItem());
-        String dateStr = dpNgaysinh.getText().trim();
-        gv.setNgaysinh(dateStr);
+        // Get date from DatePicker and convert to database format (yyyy-MM-dd)
+        LocalDate date = dpNgaysinh.getDate();
+        gv.setNgaysinh(date != null ? date.toString() : "");
         gv.setEmail(tfEmail.getText().trim());
         gv.setSdt(tfSdt.getText().trim());
 
@@ -339,11 +346,17 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfMagv.setText(gv.getMagv() != null ? gv.getMagv() : "");
         tfHoten.setText(gv.getHoten() != null ? gv.getHoten() : "");
         cbGioitinh.setSelectedItem(gv.getGioitinh() != null ? gv.getGioitinh() : "Nam");
+        // Parse date string (yyyy-MM-dd) and set to DatePicker
         String ngaysinh = gv.getNgaysinh();
         if (ngaysinh != null && !ngaysinh.isEmpty()) {
-            dpNgaysinh.setText(ngaysinh);
+            try {
+                LocalDate date = LocalDate.parse(ngaysinh);
+                dpNgaysinh.setDate(date);
+            } catch (Exception e) {
+                dpNgaysinh.clear();
+            }
         } else {
-            dpNgaysinh.setText("");
+            dpNgaysinh.clear();
         }
         tfEmail.setText(gv.getEmail() != null ? gv.getEmail() : "");
         tfSdt.setText(gv.getSdt() != null ? gv.getSdt() : "");
@@ -405,7 +418,7 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tfMagv.setText("");
         tfHoten.setText("");
         cbGioitinh.setSelectedIndex(0);
-        dpNgaysinh.setText("");
+        dpNgaysinh.clear();
         tfEmail.setText("");
         tfSdt.setText("");
         cbBoMon.setSelectedIndex(0);

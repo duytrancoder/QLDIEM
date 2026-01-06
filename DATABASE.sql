@@ -1,6 +1,7 @@
 -- ============================================
--- SCRIPT TẠO DATABASE HOÀN CHỈNH CHO DỰ ÁN QLDIEM
--- Phiên bản mới: Phân quyền theo lớp và giáo viên
+-- SCRIPT DATABASE HOÀN CHỈNH CHO DỰ ÁN QLDIEM
+-- Phiên bản: DATABASE.sql (Hợp nhất toàn bộ)
+-- Bao gồm: Tất cả bảng, dữ liệu mẫu, và cập nhật schema
 -- ============================================
 -- Copy toàn bộ nội dung này và paste vào MySQL (phpMyAdmin)
 
@@ -23,6 +24,14 @@ CREATE TABLE `tblkhoa` (
   PRIMARY KEY (`makhoa`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Bảng: tblbomon (Bộ môn)
+CREATE TABLE `tblbomon` (
+  `mabomon` varchar(20) NOT NULL,
+  `tenbomon` varchar(100) NOT NULL,
+  `cacmon` TEXT DEFAULT NULL COMMENT 'Danh sách các môn học (phân cách bởi dấu phẩy)',
+  PRIMARY KEY (`mabomon`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Bảng: tbluser (Phải tạo trước vì giáo viên và sinh viên tham chiếu)
 CREATE TABLE `tbluser` (
   `username` varchar(50) NOT NULL,
@@ -36,10 +45,13 @@ CREATE TABLE `tblmonhoc` (
   `mamon` varchar(20) NOT NULL,
   `tenmon` varchar(100) NOT NULL,
   `sotinchi` int(11) NOT NULL CHECK (`sotinchi` > 0),
-  PRIMARY KEY (`mamon`)
+  `mabomon` varchar(20) DEFAULT NULL COMMENT 'Thuộc bộ môn nào',
+  PRIMARY KEY (`mamon`),
+  KEY `fk_monhoc_bomon` (`mabomon`),
+  CONSTRAINT `fk_monhoc_bomon` FOREIGN KEY (`mabomon`) REFERENCES `tblbomon` (`mabomon`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Bảng: tblgiaovien (Mỗi giáo viên dạy 1 môn)
+-- Bảng: tblgiaovien (Mỗi giáo viên thuộc 1 bộ môn và có thể dạy nhiều môn)
 CREATE TABLE `tblgiaovien` (
   `magv` varchar(20) NOT NULL,
   `hoten` varchar(100) NOT NULL,
@@ -48,15 +60,28 @@ CREATE TABLE `tblgiaovien` (
   `email` varchar(100) DEFAULT NULL,
   `sdt` varchar(15) DEFAULT NULL,
   `makhoa` varchar(10) DEFAULT NULL,
-  `mamon` varchar(20) DEFAULT NULL COMMENT 'Môn học giáo viên dạy',
+  `mabomon` varchar(20) DEFAULT NULL COMMENT 'Bộ môn của giáo viên',
+  `mamon` varchar(20) DEFAULT NULL COMMENT 'Môn học chính (legacy, deprecated)',
   `username` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`magv`),
   UNIQUE KEY `username` (`username`),
   KEY `makhoa` (`makhoa`),
   KEY `mamon` (`mamon`),
+  KEY `fk_giaovien_bomon` (`mabomon`),
   CONSTRAINT `tblgiaovien_ibfk_1` FOREIGN KEY (`makhoa`) REFERENCES `tblkhoa` (`makhoa`),
   CONSTRAINT `tblgiaovien_ibfk_2` FOREIGN KEY (`mamon`) REFERENCES `tblmonhoc` (`mamon`),
-  CONSTRAINT `tblgiaovien_ibfk_3` FOREIGN KEY (`username`) REFERENCES `tbluser` (`username`)
+  CONSTRAINT `tblgiaovien_ibfk_3` FOREIGN KEY (`username`) REFERENCES `tbluser` (`username`),
+  CONSTRAINT `fk_giaovien_bomon` FOREIGN KEY (`mabomon`) REFERENCES `tblbomon` (`mabomon`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bảng: tbl_giangday (Phân công giảng dạy - Giáo viên dạy môn học nào)
+CREATE TABLE `tbl_giangday` (
+  `magv` varchar(20) NOT NULL,
+  `mamon` varchar(20) NOT NULL,
+  PRIMARY KEY (`magv`, `mamon`),
+  KEY `fk_giangday_monhoc` (`mamon`),
+  CONSTRAINT `fk_giangday_giaovien` FOREIGN KEY (`magv`) REFERENCES `tblgiaovien` (`magv`) ON DELETE CASCADE,
+  CONSTRAINT `fk_giangday_monhoc` FOREIGN KEY (`mamon`) REFERENCES `tblmonhoc` (`mamon`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng: tblclass
@@ -124,13 +149,20 @@ INSERT INTO `tblkhoa` (`makhoa`, `tenkhoa`) VALUES
 ('KT', 'Kinh Tế'),
 ('NN', 'Ngoại Ngữ');
 
+-- Dữ liệu: tblbomon (Bộ môn)
+INSERT INTO `tblbomon` (`mabomon`, `tenbomon`, `cacmon`) VALUES
+('BM01', 'Bộ môn Toán - Tin', 'MH01,MH04'),
+('BM02', 'Bộ môn Ngữ văn', 'MH02'),
+('BM03', 'Bộ môn Ngoại ngữ', 'MH03'),
+('BM04', 'Bộ môn Khoa học tự nhiên', 'MH05');
+
 -- Dữ liệu: tblmonhoc
-INSERT INTO `tblmonhoc` (`mamon`, `tenmon`, `sotinchi`) VALUES
-('MH01', 'Toán', 3),
-('MH02', 'Văn', 3),
-('MH03', 'Anh', 2),
-('MH04', 'Lý', 3),
-('MH05', 'Hóa', 2);
+INSERT INTO `tblmonhoc` (`mamon`, `tenmon`, `sotinchi`, `mabomon`) VALUES
+('MH01', 'Toán', 3, 'BM01'),
+('MH02', 'Văn', 3, 'BM02'),
+('MH03', 'Anh', 2, 'BM03'),
+('MH04', 'Lý', 3, 'BM01'),
+('MH05', 'Hóa', 2, 'BM04');
 
 -- Dữ liệu: tbluser
 INSERT INTO `tbluser` (`username`, `password`, `type`) VALUES
@@ -156,13 +188,27 @@ INSERT INTO `tbluser` (`username`, `password`, `type`) VALUES
 ('sv014', '123456', 2),
 ('sv015', '123456', 2);
 
--- Dữ liệu: tblgiaovien (Mỗi giáo viên dạy 1 môn)
-INSERT INTO `tblgiaovien` (`magv`, `hoten`, `gioitinh`, `ngaysinh`, `email`, `sdt`, `makhoa`, `mamon`, `username`) VALUES
-('GV001', 'Nguyễn Văn Toán', 'Nam', '1980-05-15', 'toan@abc.edu.vn', '0901234567', 'CNTT', 'MH01', 'gv001'),
-('GV002', 'Trần Thị Văn', 'Nữ', '1985-08-20', 'van@abc.edu.vn', '0902234567', 'CNTT', 'MH02', 'gv002'),
-('GV003', 'Lê Hoàng Anh', 'Nam', '1979-12-05', 'anh@abc.edu.vn', '0903234567', 'NN', 'MH03', 'gv003'),
-('GV004', 'Phạm Văn Lý', 'Nam', '1982-03-10', 'ly@abc.edu.vn', '0904234567', 'CNTT', 'MH04', 'gv004'),
-('GV005', 'Hoàng Thị Hóa', 'Nữ', '1983-07-25', 'hoa@abc.edu.vn', '0905234567', 'CNTT', 'MH05', 'gv005');
+-- Dữ liệu: tblgiaovien (Cập nhật với mabomon)
+INSERT INTO `tblgiaovien` (`magv`, `hoten`, `gioitinh`, `ngaysinh`, `email`, `sdt`, `makhoa`, `mabomon`, `mamon`, `username`) VALUES
+('GV001', 'Nguyễn Văn Toán', 'Nam', '1980-05-15', 'toan@abc.edu.vn', '0901234567', 'CNTT', 'BM01', 'MH01', 'gv001'),
+('GV002', 'Trần Thị Văn', 'Nữ', '1985-08-20', 'van@abc.edu.vn', '0902234567', 'CNTT', 'BM02', 'MH02', 'gv002'),
+('GV003', 'Lê Hoàng Anh', 'Nam', '1979-12-05', 'anh@abc.edu.vn', '0903234567', 'NN', 'BM03', 'MH03', 'gv003'),
+('GV004', 'Phạm Văn Lý', 'Nam', '1982-03-10', 'ly@abc.edu.vn', '0904234567', 'CNTT', 'BM01', 'MH04', 'gv004'),
+('GV005', 'Hoàng Thị Hóa', 'Nữ', '1983-07-25', 'hoa@abc.edu.vn', '0905234567', 'CNTT', 'BM04', 'MH05', 'gv005');
+
+-- Dữ liệu: tbl_giangday (Phân công giảng dạy)
+-- GV001 dạy Toán
+-- GV002 dạy Văn
+-- GV003 dạy Anh
+-- GV004 dạy Lý và Toán (trợ giảng)
+-- GV005 dạy Hóa
+INSERT INTO `tbl_giangday` (`magv`, `mamon`) VALUES
+('GV001', 'MH01'),
+('GV002', 'MH02'),
+('GV003', 'MH03'),
+('GV004', 'MH04'),
+('GV004', 'MH01'),
+('GV005', 'MH05');
 
 -- Dữ liệu: tblclass (3 lớp)
 INSERT INTO `tblclass` (`malop`, `tenlop`, `makhoa`, `magvcn`) VALUES
@@ -276,6 +322,8 @@ CREATE INDEX `idx_diem_hocky` ON `tbldiem`(`hocky`);
 CREATE INDEX `idx_sinhvien_hoten` ON `tblsinhvien`(`hoten`);
 CREATE INDEX `idx_sinhvien_malop` ON `tblsinhvien`(`malop`);
 CREATE INDEX `idx_phancong_magv` ON `tblphancong`(`magv`);
+CREATE INDEX `idx_giaovien_mabomon` ON `tblgiaovien`(`mabomon`);
+CREATE INDEX `idx_monhoc_mabomon` ON `tblmonhoc`(`mabomon`);
 
 -- ============================================
 -- 5. KIỂM TRA DỮ LIỆU
@@ -284,11 +332,15 @@ CREATE INDEX `idx_phancong_magv` ON `tblphancong`(`magv`);
 -- Xem tổng số bản ghi
 SELECT 'tblkhoa' AS bang, COUNT(*) AS so_luong FROM tblkhoa
 UNION ALL
+SELECT 'tblbomon', COUNT(*) FROM tblbomon
+UNION ALL
 SELECT 'tbluser', COUNT(*) FROM tbluser
 UNION ALL
 SELECT 'tblmonhoc', COUNT(*) FROM tblmonhoc
 UNION ALL
 SELECT 'tblgiaovien', COUNT(*) FROM tblgiaovien
+UNION ALL
+SELECT 'tbl_giangday', COUNT(*) FROM tbl_giangday
 UNION ALL
 SELECT 'tblclass', COUNT(*) FROM tblclass
 UNION ALL
@@ -302,13 +354,16 @@ SELECT 'tbldiem', COUNT(*) FROM tbldiem;
 SELECT 
     gv.magv,
     gv.hoten,
-    mh.tenmon AS mon_hoc,
-    GROUP_CONCAT(c.malop ORDER BY c.malop SEPARATOR ', ') AS cac_lop_quan_ly
+    bm.tenbomon AS bo_mon,
+    GROUP_CONCAT(DISTINCT mh.tenmon ORDER BY mh.tenmon SEPARATOR ', ') AS cac_mon_day,
+    GROUP_CONCAT(DISTINCT c.malop ORDER BY c.malop SEPARATOR ', ') AS cac_lop_quan_ly
 FROM tblgiaovien gv
-LEFT JOIN tblmonhoc mh ON gv.mamon = mh.mamon
+LEFT JOIN tblbomon bm ON gv.mabomon = bm.mabomon
+LEFT JOIN tbl_giangday gd ON gv.magv = gd.magv
+LEFT JOIN tblmonhoc mh ON gd.mamon = mh.mamon
 LEFT JOIN tblphancong pc ON gv.magv = pc.magv
 LEFT JOIN tblclass c ON pc.malop = c.malop
-GROUP BY gv.magv, gv.hoten, mh.tenmon
+GROUP BY gv.magv, gv.hoten, bm.tenbomon
 ORDER BY gv.magv;
 
 -- Kiểm tra sinh viên trong từng lớp
@@ -322,23 +377,47 @@ LEFT JOIN tblsinhvien sv ON c.malop = sv.malop
 GROUP BY c.malop, c.tenlop
 ORDER BY c.malop;
 
+-- Kiểm tra bộ môn và các môn học
+SELECT 
+    bm.mabomon,
+    bm.tenbomon,
+    COUNT(DISTINCT mh.mamon) AS so_mon_hoc,
+    GROUP_CONCAT(DISTINCT mh.tenmon ORDER BY mh.tenmon SEPARATOR ', ') AS danh_sach_mon_hoc,
+    COUNT(DISTINCT gv.magv) AS so_giao_vien
+FROM tblbomon bm
+LEFT JOIN tblmonhoc mh ON bm.mabomon = mh.mabomon
+LEFT JOIN tblgiaovien gv ON bm.mabomon = gv.mabomon
+GROUP BY bm.mabomon, bm.tenbomon
+ORDER BY bm.mabomon;
+
 
 -- ============================================
 -- HOÀN TẤT!
 -- ============================================
 -- Database đã được tạo thành công với:
--- - 8 bảng (tblkhoa, tbluser, tblmonhoc, tblgiaovien, tblclass, tblphancong, tblsinhvien, tbldiem)
+-- - 10 bảng (tblkhoa, tblbomon, tbluser, tblmonhoc, tblgiaovien, tbl_giangday, 
+--            tblclass, tblphancong, tblsinhvien, tbldiem)
+-- - 4 bộ môn
+-- - 5 môn học (được phân bổ vào các bộ môn)
 -- - 3 lớp, mỗi lớp 5 sinh viên (tổng 15 sinh viên)
--- - 5 giáo viên, mỗi giáo viên dạy 1 môn
+-- - 5 giáo viên, mỗi giáo viên thuộc 1 bộ môn và có thể dạy nhiều môn
+-- - Phân công giảng dạy (tbl_giangday)
 -- - Phân công giáo viên quản lý lớp (mỗi giáo viên quản lý 1-2 lớp)
 -- - Dữ liệu điểm mẫu đầy đủ cho tất cả sinh viên
 
 -- Tài khoản test:
 -- Admin: admin/123456
 -- Giáo viên: 
---   gv001/123456 (Nguyễn Văn Toán - Toán, quản lý L01, L02)
---   gv002/123456 (Trần Thị Văn - Văn, quản lý L01, L03)
---   gv003/123456 (Lê Hoàng Anh - Anh, quản lý L02, L03)
---   gv004/123456 (Phạm Văn Lý - Lý, quản lý L01)
---   gv005/123456 (Hoàng Thị Hóa - Hóa, quản lý L02, L03)
+--   gv001/123456 (Nguyễn Văn Toán - Bộ môn Toán-Tin, dạy Toán, quản lý L01, L02)
+--   gv002/123456 (Trần Thị Văn - Bộ môn Ngữ văn, dạy Văn, quản lý L01, L03)
+--   gv003/123456 (Lê Hoàng Anh - Bộ môn Ngoại ngữ, dạy Anh, quản lý L02, L03)
+--   gv004/123456 (Phạm Văn Lý - Bộ môn Toán-Tin, dạy Lý và Toán, quản lý L01)
+--   gv005/123456 (Hoàng Thị Hóa - Bộ môn KHTN, dạy Hóa, quản lý L02, L03)
 -- Sinh viên: sv001-sv015/123456
+
+-- CHÚ Ý:
+-- - Bảng tblbomon: Quản lý các bộ môn
+-- - Bảng tbl_giangday: Quản lý phân công giảng dạy (giáo viên dạy môn học nào)
+-- - Cột mabomon trong tblgiaovien: Giáo viên thuộc bộ môn nào
+-- - Cột mabomon trong tblmonhoc: Môn học thuộc bộ môn nào
+-- - Cột mamon trong tblgiaovien: Deprecated (legacy), khuyến nghị sử dụng tbl_giangday

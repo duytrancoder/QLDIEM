@@ -8,6 +8,10 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Panel quản lý sinh viên cho Admin (thêm sinh viên vào lớp)
@@ -25,7 +29,7 @@ public class QuanLySinhVienPanel extends JPanel {
 
     private JTextField tfMasv;
     private JTextField tfHoten;
-    private JTextField dpNgaysinh;
+    private DatePicker dpNgaysinh;
     private JComboBox<String> cbGioitinh;
     private JTextField tfDiachi;
     private JComboBox<String> cbLop;
@@ -54,8 +58,10 @@ public class QuanLySinhVienPanel extends JPanel {
         tfMasv = createTextField();
         tfHoten = createTextField();
 
-        dpNgaysinh = new JTextField();
-        dpNgaysinh.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14));
+        // Initialize DatePicker with Vietnamese format
+        DatePickerSettings dateSettings = new DatePickerSettings();
+        dateSettings.setFormatForDatesCommonEra("dd/MM/yyyy");
+        dpNgaysinh = new DatePicker(dateSettings);
         dpNgaysinh.setPreferredSize(new java.awt.Dimension(200, 35));
 
         cbGioitinh = new JComboBox<>(new String[] { "Nam", "Nữ" });
@@ -242,8 +248,9 @@ public class QuanLySinhVienPanel extends JPanel {
         SinhVienModel sv = new SinhVienModel();
         sv.setMasv(tfMasv.getText().trim());
         sv.setHoten(tfHoten.getText().trim());
-        String dateStr = dpNgaysinh.getText().trim();
-        sv.setNgaysinh(dateStr);
+        // Get date from DatePicker and convert to database format (yyyy-MM-dd)
+        LocalDate date = dpNgaysinh.getDate();
+        sv.setNgaysinh(date != null ? date.toString() : "");
         sv.setGioitinh((String) cbGioitinh.getSelectedItem());
         sv.setDiachi(tfDiachi.getText().trim());
 
@@ -263,11 +270,17 @@ public class QuanLySinhVienPanel extends JPanel {
     public void fillForm(SinhVienModel sv) {
         tfMasv.setText(sv.getMasv());
         tfHoten.setText(sv.getHoten());
+        // Parse date string (yyyy-MM-dd) and set to DatePicker
         String ngaysinh = sv.getNgaysinh();
         if (ngaysinh != null && !ngaysinh.isEmpty()) {
-            dpNgaysinh.setText(ngaysinh);
+            try {
+                LocalDate date = LocalDate.parse(ngaysinh);
+                dpNgaysinh.setDate(date);
+            } catch (Exception e) {
+                dpNgaysinh.clear();
+            }
         } else {
-            dpNgaysinh.setText("");
+            dpNgaysinh.clear();
         }
         cbGioitinh.setSelectedItem(sv.getGioitinh());
         tfDiachi.setText(sv.getDiachi());
@@ -291,7 +304,7 @@ public class QuanLySinhVienPanel extends JPanel {
     public void clearForm() {
         tfMasv.setText("");
         tfHoten.setText("");
-        dpNgaysinh.setText(""); // Replacement for clear()
+        dpNgaysinh.clear();
         cbGioitinh.setSelectedIndex(0);
         tfDiachi.setText("");
         cbLop.setSelectedIndex(0);
