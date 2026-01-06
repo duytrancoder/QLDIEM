@@ -151,32 +151,34 @@ public class ModernMainLayout extends JFrame {
         btnDangXuat = new ModernButton("Đăng xuất", ACCENT_COLOR);
 
         // Add buttons to menu
+        // Admin menu order: Dashboard, Students, Teachers, Manage Classes, Assign
+        // Classes, Departments, Subjects, Lock & Year, Notifications
         menuPanel.add(btnDashboard);
-        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(Box.createVerticalStrut(8));
         menuPanel.add(btnDiem);
-        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(Box.createVerticalStrut(8));
         menuPanel.add(btnHomeroomClass); // Homeroom button
-        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(Box.createVerticalStrut(8));
         menuPanel.add(btnSinhVien);
-        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(Box.createVerticalStrut(8));
         menuPanel.add(btnGiaoVien);
-        menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnLop);
-        menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnQuanLyLop);
-        menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnQuanLyBoMon); // Add
-        menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnKhoaSo);
-        menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnThongBao);
-        menuPanel.add(Box.createVerticalStrut(5));
-        menuPanel.add(btnMonHoc);
-        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(Box.createVerticalStrut(8));
+        menuPanel.add(btnQuanLyLop); // Quản lý lớp
+        menuPanel.add(Box.createVerticalStrut(8));
+        menuPanel.add(btnLop); // Phân lớp
+        menuPanel.add(Box.createVerticalStrut(8));
+        menuPanel.add(btnQuanLyBoMon); // Quản lý bộ môn
+        menuPanel.add(Box.createVerticalStrut(8));
+        menuPanel.add(btnMonHoc); // Môn học
+        menuPanel.add(Box.createVerticalStrut(8));
+        menuPanel.add(btnKhoaSo); // Khóa sổ & NK
+        menuPanel.add(Box.createVerticalStrut(8));
+        menuPanel.add(btnThongBao); // Thông báo
+        menuPanel.add(Box.createVerticalStrut(8));
         menuPanel.add(btnBaoCao);
         menuPanel.add(Box.createVerticalGlue());
         menuPanel.add(btnCaiDat);
-        menuPanel.add(Box.createVerticalStrut(5));
+        menuPanel.add(Box.createVerticalStrut(8));
         menuPanel.add(btnDangXuat);
 
         sidebarPanel.add(menuPanel, BorderLayout.CENTER);
